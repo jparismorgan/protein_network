@@ -1,3 +1,8 @@
+#Large Files
+uniref90.dmnd
+files/
+old_files/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
