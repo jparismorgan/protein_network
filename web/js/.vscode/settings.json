@@ -1,0 +1,6 @@
+{
+    "git.ignoreLimitWarning": true,
+    "python.linting.pylintArgs": [
+        "--disable=W0312"
+    ]
+}

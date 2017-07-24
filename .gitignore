@@ -1,7 +1,9 @@
 #Large Files
 uniref90.dmnd
 files/
+files
 old_files/
+old_files
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

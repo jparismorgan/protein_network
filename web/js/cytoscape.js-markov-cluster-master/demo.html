@@ -1,0 +1,128 @@
+<!DOCTYPE>
+
+<html>
+
+    <head>
+        <title>cytoscape-markov-cluster.js demo</title>
+
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+
+        <script src="/Users/parismorgan/Desktop/iMicrobes/network_builder/web/js/cytoscape/dist/cytoscape.min.js"></script>
+
+
+        <!-- for testing with local version of cytoscape.js -->
+        <!--<script src="../cytoscape.js/build/cytoscape.js"></script>-->
+
+        <script src="cytoscape-markov-cluster.js"></script>
+
+        <style>
+            body {
+                font-family: helvetica neue, helvetica, liberation sans, arial, sans-serif;
+                font-size: 14px;
+            }
+
+            #cy {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                right: 0;
+                z-index: 999;
+            }
+
+            h1 {
+                opacity: 0.5;
+                font-size: 1em;
+                font-weight: bold;
+            }
+        </style>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function(){
+
+                var cy = window.cy = cytoscape({
+                    container: document.getElementById('cy'),
+
+                    style: [
+                        {
+                            selector: 'node',
+                            style: {
+                                'content': 'data(id)'
+                            }
+                        },
+
+                        {
+                            selector: 'edge',
+                            style: {
+                                'curve-style': 'haystack',
+                                'haystack-radius': 0,
+                                'width': 2,
+                                'opacity': 0.666
+                            }
+                        },
+
+                        {
+                            selector: ':selected',
+                            style: {
+
+                            }
+                        }
+                    ],
+
+                    elements: {
+                        nodes: [
+                            { data: { id: 'cat' } },
+                            { data: { id: 'hat' } },
+                            { data: { id: 'bat' } },
+                            { data: { id: 'bit' } },
+                            { data: { id: 'fit' } },
+                            { data: { id: 'hit' } }
+                        ],
+                        edges: [
+                            { data: { source: 'cat', target: 'hat', weight: 0.2 } },
+                            { data: { source: 'hat', target: 'bat', weight: 0.16 } },
+                            { data: { source: 'bat', target: 'cat', weight: 1.0 } },
+                            { data: { source: 'bat', target: 'bit', weight: 0.125 } },
+                            { data: { source: 'bit', target: 'fit', weight: 0.25 } },
+                            { data: { source: 'fit', target: 'hit', weight: 0.5 } },
+                            { data: { source: 'hit', target: 'bit', weight: 0.16 } }
+                        ]
+                    },
+
+                    layout: {
+                        name: 'cose',
+                        fit: true,
+                        padding: 30
+                    }
+                });
+
+                // Input parameters to Markov cluster algorithm
+                var options = {
+                    inflateFactor: 1.5,
+                    attributes: [
+                        function(edge) {
+                            return edge.data('weight');
+                        }
+                    ]
+                };
+
+                // Run Markov cluster on graph
+                var clusters = cy.elements().markovCluster( options );
+
+                // Assign random colors to each cluster!
+                for (var c = 0; c < clusters.length; c++) {
+                    clusters[c].style( 'background-color', '#' + Math.floor(Math.random()*16777215).toString(16) );
+                }
+
+            });
+        </script>
+    </head>
+
+    <body>
+        <h1>cytoscape-markov-cluster demo</h1>
+
+        <div id="cy"></div>
+
+    </body>
+
+</html>

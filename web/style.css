@@ -1,0 +1,31 @@
+body { 
+  font: 14px helvetica neue, helvetica, arial, sans-serif;
+}
+
+#cy {
+  height: 65%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 10%;
+  bottom: 10%;
+}
+
+#settings {
+  height: 10%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0%;
+  background-color: beige;
+}
+
+#info{
+  height: 25%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 75%;
+  background-color: beige;
+
+}
