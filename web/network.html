@@ -19,12 +19,23 @@
 
 <body>
 <div id='settings'>
-    <input type="range" value="90" min="40" max="100" step="1" oninput="updatePercentIdLabel(this.value)" onmouseup="updatePercentIdCutoff(this.value)" />
+    Select edge percent id cutoff: <input type="range" value="90" min="40" max="100" step="1" oninput="updatePercentIdLabel(this.value)" onmouseup="updatePercentIdCutoff(this.value)" />
     <span id="currentValue">90</span>
+    <br>
+    
+    <form action="elements-select-form" >
+        Select element seq percent id cutoff for drawing graph:
+        <input type="radio" name="elements-select" value="40" onclick="updateElements(this.value)"> 40
+        <input type="radio" name="elements-select" value="60" onclick="updateElements(this.value)"> 60
+        <input type="radio" name="elements-select" value="75" onclick="updateElements(this.value)"> 75
+        <input type="radio" name="elements-select" value="90" onclick="updateElements(this.value)" checked="checked"> 90
+    </form>
+
 </div>
 <div id="cy"></div>
 <div id="info"></div>
 <!-- Load appplication code at the end to ensure DOM is loaded -->
+<script src = "elements.js"></script>
 <script src = "network.js"></script>
 </body>
 </html>
