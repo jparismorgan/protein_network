@@ -19,10 +19,10 @@
 
 <body>
 <div id='settings'>
-    Select edge percent id cutoff: <input type="range" value="90" min="40" max="100" step="1" oninput="updatePercentIdLabel(this.value)" onmouseup="updatePercentIdCutoff(this.value)" />
-    <span id="currentValue">90</span>
+<h3>Settings</h3>
+    Select edge percent id cutoff: <input id ="pid-slider" type="range" value="90" min="40" max="100" step="1" oninput="updatePercentIdLabel(this.value)" onmouseup="updatePercentIdCutoff(this.value)" />
+    <span id="pid-label">90</span>
     <br>
-    
     <form action="elements-select-form" >
         Select element seq percent id cutoff for drawing graph:
         <input type="radio" name="elements-select" value="40" onclick="updateElements(this.value)"> 40
@@ -30,12 +30,19 @@
         <input type="radio" name="elements-select" value="75" onclick="updateElements(this.value)"> 75
         <input type="radio" name="elements-select" value="90" onclick="updateElements(this.value)" checked="checked"> 90
     </form>
-
+    <button type="button" onclick="mcl()">MCL</button>
+    <br>
+    Select protein length cutoff: <input id ="plength-slider" type="range" value="90" min="0" max="600" step="1" oninput="updateLengthCutoff(this.value)" onmouseup="updateLengthCutoff(this.value)" />
+    <span id="plength-label">90</span>
 </div>
 <div id="cy"></div>
-<div id="info"></div>
+<div id="info">
+    <h3>Information</h3>
+    <div id = "info-text"></div>
+</div>
 <!-- Load appplication code at the end to ensure DOM is loaded -->
 <script src = "elements.js"></script>
+<script src = "elements_notincluded.js"></script>
 <script src = "network.js"></script>
 </body>
 </html>

@@ -38,10 +38,8 @@ class RepNode:
 	def __init__(self, id_val, d, cluster_members = None):
 		self.id = id_val
 		self.num_cluster_members = None
-		self.keys = []
 		for k, v in d.items():
 			setattr(self, k, v)
-			self.keys.append(k)
 		self.cluster_members = cluster_members
 
 def uniprotAPICall(protein_name):
@@ -181,14 +179,19 @@ def parseAllVsAllBlast(blast_allvsall_filepath):
 	return	
 
 def createClustNode(n):
-	str = '{data: {' 
+	ret_str = '{data: {' 
 	for attr, value in n.__dict__.iteritems():
-		str += attr+': "'+value+'", '
-	str = str[:-2] + '}}'
-	return str
+		ret_str += attr+': "'+value+'", '
+	ret_str = ret_str[:-2] + '}}'
+	return ret_str
 
 def createRepNode(n):
-	return '{data: {name: "'+n.id+'", id: "'+n.id+'", num_cluster_members: '+str(n.num_cluster_members)+', cluster_members: ['+ ','.join([createClustNode(c) for c in n.cluster_members]) +']}},\n'
+	ret_str = '{data: {name: "'+n.id+'", num_cluster_members: '+str(n.num_cluster_members)+', ' 
+	for attr, value in n.__dict__.iteritems():
+		if attr != 'cluster_members' and attr != 'num_cluster_members':
+			ret_str += attr+': "'+str(value)+'", '	
+	ret_str = ret_str + 'cluster_members: ['+ ','.join([createClustNode(c) for c in n.cluster_members]) +'] }},\n'
+	return ret_str
 	
 def createEdge(e):
     return '\n{data: {source: "'+e.source+'", target: "'+e.target+'", align_len: '+e.align_len+', align_score: '+e.align_score+', percent_id: '+e.percent_id+', id: "'+e.id+'", weight: '+e.align_score+'},\n},\n'
@@ -246,6 +249,7 @@ def main():
 	Creates an XGMML file for viewing with cytoscape
 	"""
 	parseAllVsAllBlast("/Users/parismorgan/Desktop/iMicrobes/network_builder/files/24Jul17_mmox_01/uniref90_mmox_allvall")
+
 	createCytoscapeWeb("/Users/parismorgan/Desktop/iMicrobes/network_builder/web/")
 	 
 if __name__ == '__main__':
