@@ -1,5 +1,35 @@
 //End of protein elements.
 
+function someFunction(pid, plen){
+    elems = window['elems_40'];
+    ret_elems = [];
+    for(i in elems)
+    {
+        ele = elems[i];
+        //if edge
+        if (ele['data'].hasOwnProperty('source')){
+            if (ele['data']['percent_id'] > pid){
+                ret_elems.push(ele);
+            }
+        }
+        //else if node
+        {
+             if (ele['data']['length'] > plen){
+                 ret_elems.push(ele);
+             }
+        }
+    }
+    
+
+}
+
+console.time('someFunction');
+
+someFunction(); // run whatever needs to be timed in between the statements
+
+console.timeEnd('someFunction');
+
+
 
 var params = {
         name: 'cola',
@@ -16,7 +46,6 @@ var params = {
         handleDisconnected: true,
         avoidOverlap: true,
         infinite:false,
-        
     };
 
 var mcl_options = {
@@ -123,6 +152,7 @@ function updateNameCutoff(){
 function updateElements(element_cuttoff){
 
     new_elems =  window['elems_'+element_cuttoff];
+    console.log(new_elems);
     
     if (typeof cy !== 'undefined') { cy.destroy(); }      
     
@@ -150,6 +180,7 @@ function updateElements(element_cuttoff){
         },
     ],
     });
+    console.log(cy.elements());
     
     layout = new_cy.layout(params);
     layout.run();
