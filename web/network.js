@@ -33,8 +33,9 @@ var mcl_options = {
 
 var cy;
 var layout;
-var init_pid_cutoff = 60; //edge percent identity cutoff
-var init_plen_cutoff = 90; //node protein length cutoff
+var pid = 60; //edge percent identity cutoff
+var plen = 90; //node protein length cutoff
+var pname = "";
 
 //to delete
 var colors = []
@@ -90,7 +91,6 @@ function selectElements(pid_cutoff, plen_cutoff){
 var removed_len;
 var removed_pname;
 var removed_pid;
-var x;
 function updateCutoff(){
     /** 
      * Updates the network graph according to cutoffs
@@ -103,58 +103,31 @@ function updateCutoff(){
     plen = document.getElementById('plen').value;
     pname = document.getElementById('pname').value;
     
-    //console.log(removed_edges);
-    //console.log(removed_nodes);
-
-    //restore nodes
-// //    console.log(removed_nodes)
-//     if (removed_nodes.length >= 1){
-//         for (var i in removed_nodes.length){
-//             // console.log(removed_nodes[i])
-//             if (removed_nodes[i] !== undefined){
-//                 if (removed_nodes[i].length !== 0){
-//                     removed_nodes[i].restore();
-//   //                  console.log("restored");
-//                 }
-//             } 
-//         }
-//     }
-//     removed_nodes = [];
-
-// removedData = cy.remove(someNodes.union(someNodes.connectedEdges()));
-// Then both removedData.restore() and cy.add(removedData)
-
-
-        if (removed_pid){
-            removed_pid.restore();
-            removed_pid = undefined;
-        }
-
-        if (removed_len){
-            removed_len.restore();
-            removed_len = undefined;
+    //restore previously removed elements
+    if (removed_pid){
+        removed_pid.restore();
+        removed_pid = undefined;
     }
 
-        if (removed_pname){
-            removed_pname.restore();
-            removed_pname = undefined;
+    if (removed_len){
+        removed_len.restore();
+        removed_len = undefined;
     }
 
-    // x = cy.elements("edge:removed");
-    // console.log(x);
+    if (removed_pname){
+        removed_pname.restore();
+        removed_pname = undefined;
+    }
 
     //remove nodes by pname
-    if (pname !== "" || pname !== undefined){
+    if (pname !== "" && pname !== undefined){
         rem_pname = cy.elements('node[protein_name !*="' + pname + '"]');
-        
-        removed_pname = rem_pname
-        cy.remove(rem_pname);
+        removed_pname = cy.remove(rem_pname.union(rem_pname.connectedEdges()));
     }
 
     //remove nodes by plen
     rem_plen = cy.elements("node[length < " + plen + "]");
-    removed_len = rem_plen
-    cy.remove(rem_plen);
+    removed_len = cy.remove(rem_plen.union(rem_plen.connectedEdges()));
 
     //remove edges by pid
     rem_pid = cy.elements("edge[percent_id < " + pid+ "]");
@@ -165,15 +138,11 @@ function updateCutoff(){
     document.getElementById("pname-label").innerHTML = "Search term: " + pname;
     document.getElementById("plen-label").innerHTML = plen;
     document.getElementById("pid-label").innerHTML = pid;
-    
-    console.log("Finished updating");
-    console.log("");
 }
 
 function updatePidLabel(pid_cutoff){
     document.getElementById("pid-label").innerHTML = pid_cutoff;
-    document.getElementById("pid").value = pid_cutoff;
-    
+    document.getElementById("pid").value = pid_cutoff; 
 }
 
 function updatePlenLabel(plen_cutoff){
@@ -182,11 +151,22 @@ function updatePlenLabel(plen_cutoff){
 }
 
 function buildGraph(pid_cutoff, plen_cutoff){
+    /**
+     * 
+     */
+    
+    //set variables from global if not given
+    pid_cutoff = pid_cutoff ? pid_cutoff : pid;;
+    plen_cutoff = plen_cutoff ? plen_cutoff : plen;;
 
+    //call SelectElements to parse the pairwise_parser.py output
     all_elems =  selectElements(pid_cutoff, plen_cutoff);
+    //elements to include in the graph
     graph_elems = all_elems['graph_elems'];
+    //elements to exclude in the graph, but to add in after creation
     exclude_elems = all_elems['exclude_elems'];
     
+    //destroy previous graph
     if (typeof cy !== 'undefined') { cy.destroy(); }      
     
     //Create new cy graph with the selected elements
@@ -199,8 +179,8 @@ function buildGraph(pid_cutoff, plen_cutoff){
         style: [{
         selector: 'node',
             style: {
-           // 'content': 'data(name)',
-            'width': 'mapData(num_cluster_members, 0, 150, 40,  90)',
+            // 'content': 'data(name)',
+            'width': 'mapData(num_cluster_members, 0, 150, 40,  90)',  //size gradient by # clust membs 
             'height': 'mapData(num_cluster_members, 0, 150, 40, 90)', 
             }
         },
@@ -214,20 +194,25 @@ function buildGraph(pid_cutoff, plen_cutoff){
     ],
     });
     
+    //create the layout
     layout = new_cy.layout(params);
     layout.run();
+    
+    //run the MCL algorithm to color nodes
     mcl();
 
+    //reassign to permanent variable
     cy = new_cy;
 
-    //Add in al the edges, set timeout so they are not part of the initial layout
-    cy.one('click', function(event){
+    //Add in the rest of the edges, update labels & cutoff to exclude them
+    cy.ready(function(event){
         new_cy.add(exclude_elems);
         updatePidLabel(pid_cutoff);
         updatePlenLabel(plen_cutoff);
         updateCutoff();
     });
 
+    //on node click funciton
     var node_neighbors = null;
     cy.$('node').on('click', function(e){
         
@@ -265,6 +250,7 @@ function buildGraph(pid_cutoff, plen_cutoff){
         });
     });
 
+    //on edge click function
     cy.$('edge').on('click', function(e){
         var ele = e.target;
         console.log(ele);
@@ -279,4 +265,5 @@ function buildGraph(pid_cutoff, plen_cutoff){
     });
 }
 
-buildGraph(init_pid_cutoff, init_plen_cutoff);
+//build graph initially
+buildGraph();

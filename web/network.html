@@ -26,18 +26,22 @@
 <body>
 <div id='settings'>
 <h3>Settings</h3>
-    Select edge percent id cutoff: <input id ="pid" type="range" value="90" min="40" max="100" step="1" oninput="updatePidLabel(this.value)" onmouseup="updateCutoff()" />
+    Edge % identity minimum: <input id ="pid" type="range" value="90" min="40" max="100" step="1" oninput="updatePidLabel(this.value)" onmouseup="updateCutoff()" />
     <span id="pid-label">90</span>
     <br>
  
-    Select protein length cutoff: <input id ="plen" type="range" value="90" min="0" max="600" step="1" oninput="updatePlenLabel(this.value)" onmouseup="updateCutoff()" />
+    Protein length minimum: <input id ="plen" type="range" value="90" min="0" max="600" step="1" oninput="updatePlenLabel(this.value)" onmouseup="updateCutoff()" />
     <span id="plen-label">90</span>
     <br>
 
-    Phrase to select for in name
+    Search phrase:
     <input type="text" id="pname" value="" maxlength="40" />
     <input type="submit" value="Submit" onclick="updateCutoff()"/>
     <span id="pname-label"></span>
+    <br>
+
+    Run clustering again:
+    <button type="button" onclick="buildGraph()">Build graph</button>
 
 </div>
 <div id="cy"></div>
