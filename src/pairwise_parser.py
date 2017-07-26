@@ -203,21 +203,16 @@ def createCytoscapeWeb(out_filepath):
 	Not true JSON: The keys are not strings.
 	"""
 	#Write the network to a text file for debugging
-	network_cutoffs = [40, 60, 75, 90]
-	with open(out_filepath + "elements.js", "w") as elems_outfile, open(out_filepath + "elements_notincluded.js", "w") as elems_notincluded_outfile:
-		
-		for n_cutoff in network_cutoffs:
-			elems_outfile.write('var elems_'+str(n_cutoff)+' = [\n')
-			elems_notincluded_outfile.write('var elems_notincluded_'+str(n_cutoff)+' = [\n')
-			for n in nodes:
-				elems_outfile.write(createRepNode(n))
-			for e in edges:
-				if int(e.percent_id) >= n_cutoff:
-					elems_outfile.write(createEdge(e))
-				else:
-					elems_notincluded_outfile.write(createEdge(e))
-			elems_outfile.write('];\n //End of elements for cutoff of '+str(n_cutoff)+'.\n\n\n')
-			elems_notincluded_outfile.write('];\n //End of elements not included for cutoff of '+str(n_cutoff)+'.\n\n\n')
+	
+	with open(out_filepath + "elements.js", "w") as elems_outfile:
+		elems_outfile.write('var nodes = [\n')
+		for n in nodes:
+			elems_outfile.write(createRepNode(n))
+		elems_outfile.write(']; \n //End of nodes \n\n')
+		elems_outfile.write('var edges = [\n')
+		for e in edges:
+			elems_outfile.write(createEdge(e))
+		elems_outfile.write(']; \n //End of edges \n\n')
 	
 	
 

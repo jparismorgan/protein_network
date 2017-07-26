@@ -26,27 +26,18 @@
 <body>
 <div id='settings'>
 <h3>Settings</h3>
-    Select edge percent id cutoff: <input id ="pid-slider" type="range" value="90" min="40" max="100" step="1" oninput="updatePercentIdLabel(this.value)" onmouseup="updatePercentIdCutoff(this.value)" />
+    Select edge percent id cutoff: <input id ="pid" type="range" value="90" min="40" max="100" step="1" oninput="updatePidLabel(this.value)" onmouseup="updateCutoff()" />
     <span id="pid-label">90</span>
     <br>
-    
-    <form action="pid-select-form" >
-        Select element seq percent id cutoff for drawing graph:
-        <input type="radio" name="pid-select" value="40" onclick="updateElements(this.value)"> 40
-        <input type="radio" name="pid-select" value="60" onclick="updateElements(this.value)"> 60
-        <input type="radio" name="pid-select" value="75" onclick="updateElements(this.value)"> 75
-        <input type="radio" name="pid-select" value="90" onclick="updateElements(this.value)" checked="checked"> 90
-    </form>
-    
-    <button type="button" onclick="mcl()">MCL</button>
-    <br>
-    
-    Select protein length cutoff: <input id ="plength-slider" type="range" value="90" min="0" max="600" step="1" oninput="updateLengthCutoff(this.value)" onmouseup="updateLengthCutoff(this.value)" />
+ 
+    Select protein length cutoff: <input id ="plen" type="range" value="90" min="0" max="600" step="1" oninput="updatePlenCutoff(this.value)" onmouseup="updateCutoff()" />
     <span id="plength-label">90</span>
+    <br>
 
     Phrase to select for in name
-    <input type="text" id="pname-select" value="" maxlength="40" />
-    <input type="submit" value="Submit" onclick="updateNameCutoff()"/>
+    <input type="text" id="pname" value="" maxlength="40" />
+    <input type="submit" value="Submit" onclick="updateCutoff()"/>
+    <span id="pname-label"></span>
 
 </div>
 <div id="cy"></div>
@@ -69,3 +60,17 @@
 <script src = "network.js"></script>
 </body>
 </html>
+
+
+   
+    <!-- <form action="pid-select-form" >
+        Select element seq percent id cutoff for drawing graph:
+        <input type="radio" name="pid-select" value="40" onclick="updateElements(this.value)"> 40
+        <input type="radio" name="pid-select" value="60" onclick="updateElements(this.value)"> 60
+        <input type="radio" name="pid-select" value="75" onclick="updateElements(this.value)"> 75
+        <input type="radio" name="pid-select" value="90" onclick="updateElements(this.value)" checked="checked"> 90
+    </form>
+     -->
+    <!-- <button type="button" onclick="mcl()">MCL</button>
+    <br> -->
+    

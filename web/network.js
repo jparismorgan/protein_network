@@ -1,38 +1,4 @@
 //End of protein elements.
-
-//test
-
-function someFunction(pid, plen){
-    elems = window['elems_40'];
-    ret_elems = [];
-    for(i in elems)
-    {
-        ele = elems[i];
-        //if edge
-        if (ele['data'].hasOwnProperty('source')){
-            if (ele['data']['percent_id'] > pid){
-                ret_elems.push(ele);
-            }
-        }
-        //else if node
-        {
-             if (ele['data']['length'] > plen){
-                 ret_elems.push(ele);
-             }
-        }
-    }
-    
-
-}
-
-console.time('someFunction');
-
-someFunction(); // run whatever needs to be timed in between the statements
-
-console.timeEnd('someFunction');
-
-
-
 var params = {
         name: 'cola',
         pixelRatio: 1, //performance optimization
@@ -67,8 +33,8 @@ var mcl_options = {
 
 var cy;
 var layout;
-var percent_id_cuttoff = 90;
-var element_cutoff = 90;
+var init_pid_cutoff = 90;
+var init_plen_cutoff = 90;
 
 //to delete
 var colors = []
@@ -91,77 +57,106 @@ function mcl(){
     }
 };
 
-var removed_elems_pid;
-function updatePercentIdCutoff(pid_cutoff){
-    percent_id_cuttoff = pid_cutoff
-    //Previous method: remove edges from graph
-    updatePercentIdLabel(percent_id_cuttoff);
-    if (removed_elems_pid){
-        removed_elems_pid.restore();};
-    removed_elems_pid = cy.elements("edge[percent_id < " + pid_cutoff+ "]");
-    cy.remove(removed_elems_pid);
+function selectElements(pid_cutoff, plen_cutoff){
+    /** 
+     * Returns an array of edges and nodes matching cutoffs
+     * Input is the pid and plen cutoffs
+     * Edges meet the protein percent identity (pid) cutoff 
+     * Nodes meet protein length (plen) cutoff */
+    graph_elems = [];
+    exclude_elems = [];
+    for(i in nodes)
+    {
+        n = nodes[i];
+        if (n['data']['length'] > plen_cutoff){
+            graph_elems.push(n);
+             }
+        else{
+            exclude_elems.push(n);
+        }
+    }
+    for (i in edges){
+        e = edges[i];
+        if (e['data']['percent_id'] > pid_cutoff){
+            graph_elems.push(e);
+            }
+        else{
+            exclude_elems.push(e);
+        }
+    }
+    return {graph_elems: graph_elems, exclude_elems:exclude_elems};
+};
 
-    //New method: create new layout
-    // new_elems = cy.elements("edge[percent_id > " + percent_id_cuttoff+ "], node");
-    // layout.stop();      
-    // new_layout = new_elems.layout(params);
-    // new_layout.run();
-    //new_layout.style(params_style);
+var removed_nodes = [];
+var removed_edges;
+function updateCutoff(){
+    /** 
+     * Updates the network graph according to cutoffs
+     * Uses protein percent identity (pid), protein length (plen), and protein name substring (pname)  
+     * These are stored in network.html forms and buttons.
+     */
     
-    //mcl();
+    //get the pid, plen, and pname
+    pid = document.getElementById('pid').value;
+    plen = document.getElementById('plen').value;
+    pname = document.getElementById('pname').value;
+    
+    //restore nodes
+    if (removed_nodes){
+        for (i in removed_nodes){
+            removed_nodes[i].restore();
+        }
+    }
+    //restore edges
+    if (removed_edges){
+        removed_edges.restore();
+    }
+
+    //remove nodes by pname
+    if (pname !== "" || pname !== undefined){
+        rem_pname = cy.elements('node[protein_name !*="' + pname + '"]');
+        removed_nodes.push(rem_pname);
+        cy.remove(rem_pname);
+    }
+
+    //remove nodes by plen
+    rem_plen = cy.elements("node[length < " + plen + "]");
+    removed_nodes.push(rem_plen);
+    cy.remove(rem_plen);
+
+    //remove edges by pid
+    rem_pid = cy.elements("edge[percent_id < " + pid+ "]");
+    removed_edges = rem_pid;
+    cy.remove(rem_pid);
+
+    //update html span's
+    document.getElementById("pname-label").innerHTML = "Search term: " + pname;
+    document.getElementById("plength-label").innerHTML = plen;
+    document.getElementById("pid-label").innerHTML = pid;
+
 }
 
-function updatePercentIdLabel(pid_cutoff){
+function updatePidLabel(pid_cutoff){
     document.getElementById("pid-label").innerHTML = pid_cutoff;
-    document.getElementById("pid-slider").value = pid_cutoff;
 }
 
-var removed_elems_plength;
-function updateLengthCutoff(plength){
-    //update the html label
-    document.getElementById("plength-label").innerHTML = plength;
-    
-    //remove the appropriate nodes
-    if (removed_elems_plength){
-        removed_elems_plength.restore();};
-    removed_elems_plength = cy.elements("node[length < " + plength+ "]");
-    cy.remove(removed_elems_plength);
-
-    //update the edges so that if increased the # of nodes, their edges are re-added
-   // updatePercentIdCutoff(percent_id_cuttoff);
+function updatePlenLabel(plen_cutoff){
+    document.getElementById("pid-label").innerHTML = plen_cutoff;
 }
 
-var removed_elems_name;
-function updateNameCutoff(){
-    //get the text
-    pname = document.getElementById('pname-select').value;
-    
-    //update the html label
-    //document.getElementById("pname-label").innerHTML = "Search term: " + pname;
-    
-    //remove the appropriate nodes
-    if (removed_elems_name){
-        removed_elems_name.restore();};
-    matched_elements = cy.elements('node[protein_name !*="' + pname + '"]');
-    cy.remove(matched_elements);
+function buildGraph(pid_cutoff, plen_cutoff){
 
-
-    //update the edges so that if increased the # of nodes, their edges are re-added
-   // updatePercentIdCutoff(percent_id_cuttoff);
-
-}
-
-function updateElements(element_cuttoff){
-
-    new_elems =  window['elems_'+element_cuttoff];
-    console.log(new_elems);
+    all_elems =  selectElements(pid_cutoff, plen_cutoff);
+    graph_elems = all_elems['graph_elems'];
+    exclude_elems = all_elems['exclude_elems'];
+    console.log(graph_elems);
     
     if (typeof cy !== 'undefined') { cy.destroy(); }      
     
     //Create new cy graph with the selected elements
      new_cy = window.cy = cytoscape({
         container: document.getElementById('cy'),
-        elements: new_elems,
+        elements: graph_elems,
         zoom: .1,
         minZoom: .05,
         maxZoom: .2,
@@ -182,23 +177,18 @@ function updateElements(element_cuttoff){
         },
     ],
     });
-    console.log(cy.elements());
     
     layout = new_cy.layout(params);
     layout.run();
     mcl();
 
     cy = new_cy;
-    
-    percent_id_cuttoff = element_cuttoff;
-    updatePercentIdCutoff(percent_id_cuttoff);
 
     //Add in al the edges, set timeout so they are not part of the initial layout
-    cy.ready(function(event){
+    cy.on('click', function(event){
         setTimeout(10000);
-        edges = window['elems_notincluded_'+element_cutoff];
-        new_cy.add(edges);
-        updatePercentIdCutoff(percent_id_cuttoff);
+        new_cy.add(exclude_elems);
+        updateCutoff();
     });
 
     var node_neighbors = null;
@@ -251,5 +241,4 @@ function updateElements(element_cuttoff){
     });
 }
 
-updateElements(element_cutoff);
-mcl();
+buildGraph(init_pid_cutoff, init_plen_cutoff);
