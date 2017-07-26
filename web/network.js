@@ -87,11 +87,37 @@ function updatePercentIdLabel(pid_cutoff){
 
 var removed_elems_plength;
 function updateLengthCutoff(plength){
+    //update the html label
     document.getElementById("plength-label").innerHTML = plength;
+    
+    //remove the appropriate nodes
     if (removed_elems_plength){
         removed_elems_plength.restore();};
     removed_elems_plength = cy.elements("node[length < " + plength+ "]");
     cy.remove(removed_elems_plength);
+
+    //update the edges so that if increased the # of nodes, their edges are re-added
+   // updatePercentIdCutoff(percent_id_cuttoff);
+}
+
+var removed_elems_name;
+function updateNameCutoff(){
+    //get the text
+    pname = document.getElementById('pname-select').value;
+    
+    //update the html label
+    //document.getElementById("pname-label").innerHTML = "Search term: " + pname;
+    
+    //remove the appropriate nodes
+    if (removed_elems_name){
+        removed_elems_name.restore();};
+    matched_elements = cy.elements('node[protein_name !*="' + pname + '"]');
+    cy.remove(matched_elements);
+
+
+    //update the edges so that if increased the # of nodes, their edges are re-added
+   // updatePercentIdCutoff(percent_id_cuttoff);
+
 }
 
 function updateElements(element_cuttoff){
@@ -100,6 +126,7 @@ function updateElements(element_cuttoff){
     
     if (typeof cy !== 'undefined') { cy.destroy(); }      
     
+    //Create new cy graph with the selected elements
      new_cy = window.cy = cytoscape({
         container: document.getElementById('cy'),
         elements: new_elems,
@@ -133,6 +160,7 @@ function updateElements(element_cuttoff){
     percent_id_cuttoff = element_cuttoff;
     updatePercentIdCutoff(percent_id_cuttoff);
 
+    //Add in al the edges, set timeout so they are not part of the initial layout
     cy.ready(function(event){
         setTimeout(10000);
         edges = window['elems_notincluded_'+element_cutoff];
@@ -159,9 +187,9 @@ function updateElements(element_cuttoff){
         info_text += 'source_organism: ' + ele.data('source_organism') + '<br>'
         info_text += 'length: ' + ele.data('length') +  '<br>'
         info_text += 'NCBI_taxonomy: ' + ele.data('NCBI_taxonomy') + '<br>'
-        info_text += 'UniProtKB_accession: ' + ele.data('UniProtKB_accession') + '<br>'
+        info_text += 'UniProtKB_accession: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'">' +ele.data('UniProtKB_accession')+'</a><br>'
         info_text += 'num_cluster_members: ' + ele.data('num_cluster_members') + '<br>'
-
+        
         //Protein name: " + ele.data('id') + "<br> Num Cluster Members: " + ele.data('num_cluster_members');
         console.log(info_text);
         document.getElementById("info-text").innerHTML = info_text;
