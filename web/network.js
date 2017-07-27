@@ -1,5 +1,10 @@
-//End of protein elements.
-var params = {
+var cy;         //graph object
+var layout;     //layout object
+var pid = 60;   //edge percent identity cutoff
+var plen = 90;  //node protein length cutoff
+var pname = ""; //node name substring phrase
+
+var params = {  //parameters for the layout
         name: 'cola',
         pixelRatio: 1, //performance optimization
         hideEdgesOnViewport: true, //performance
@@ -16,7 +21,8 @@ var params = {
         infinite:false,
     };
 
-var mcl_options = {
+
+var mcl_options = { //options for the MCL algorithm
     expandFactor: 2,        // affects time of computation and cluster granularity to some extent: M * M
     inflateFactor: 2,       // affects cluster granularity (the greater the value, the more clusters): M(i,j) / E(j)
     multFactor: 1,          // optional self loops for each node. Use a neutral value to improve cluster computations.
@@ -30,15 +36,6 @@ var mcl_options = {
         }
      ]
 };
-
-var cy;
-var layout;
-var pid = 60; //edge percent identity cutoff
-var plen = 90; //node protein length cutoff
-var pname = "";
-
-//to delete
-var colors = []
 
 function mcl(){
     // Run Markov cluster on graph
@@ -58,39 +55,9 @@ function mcl(){
     }
 };
 
-function selectElements(pid_cutoff, plen_cutoff){
-    /** 
-     * Returns an array of edges and nodes matching cutoffs
-     * Input is the pid and plen cutoffs
-     * Edges meet the protein percent identity (pid) cutoff 
-     * Nodes meet protein length (plen) cutoff */
-    graph_elems = [];
-    exclude_elems = [];
-    for(i in nodes)
-    {
-        n = nodes[i];
-        if (n['data']['length'] > plen_cutoff){
-            graph_elems.push(n);
-             }
-        else{
-            exclude_elems.push(n);
-        }
-    }
-    for (i in edges){
-        e = edges[i];
-        if (e['data']['percent_id'] > pid_cutoff){
-            graph_elems.push(e);
-            }
-        else{
-            exclude_elems.push(e);
-        }
-    }
-    return {graph_elems: graph_elems, exclude_elems:exclude_elems};
-};
-
-var removed_len;
-var removed_pname;
-var removed_pid;
+var removed_len;    //used by updateCutoff to keep tracked of removed nodes
+var removed_pname;  //used by updateCutoff to keep tracked of removed nodes
+var removed_pid;    //used by updateCutoff to keep tracked of removed edges
 function updateCutoff(){
     /** 
      * Updates the network graph according to cutoffs
@@ -141,24 +108,83 @@ function updateCutoff(){
 }
 
 function updatePidLabel(pid_cutoff){
+    /**
+     * Updates the text of the pid-label in network.html
+     */
     document.getElementById("pid-label").innerHTML = pid_cutoff;
     document.getElementById("pid").value = pid_cutoff; 
 }
 
 function updatePlenLabel(plen_cutoff){
+    /**
+     * Updates the text of the plen-label in network.html
+     */
     document.getElementById("plen-label").innerHTML = plen_cutoff;
     document.getElementById("plen").value = plen_cutoff
 }
 
-function buildGraph(pid_cutoff, plen_cutoff){
+function selectElements(pid_cutoff, plen_cutoff, pname_phrase){
+    /** 
+     * Returns an array of edges and nodes matching cutoffs
+     * Input is the pid and plen cutoffs
+     * Edges meet the protein percent identity (pid) cutoff 
+     * Nodes meet protein length (plen) cutoff 
+     **/
+    var graph_elems = []; //elements that pass criteria
+    var exclude_elems = []; //elements the fail criteria
+    
+    var node_set = new Set();
+    for(i in nodes)
+    {
+        n = nodes[i];
+        //check protein length and whether pname_phrase is a substring of the protein name
+        if (n['data']['length'] > plen_cutoff){
+            if (pname_phrase == "" || pname_phrase == undefined || n['data']['name'].indexOf(pname_phrase) >= 0){
+                graph_elems.push(n);
+                node_set.add(n['data']['id'])
+            }
+        }
+        else{
+            exclude_elems.push(n);
+        }
+    }
+    for (i in edges){
+        e = edges[i];
+        //check if the edge percent id (i.e. how similar the two proteins are) is greater than cutoff
+        if (e['data']['percent_id'] > pid_cutoff){
+            //check if the two nodes are present in the graph
+            var edge_parents = e['data']['id'].split(',');
+            if (node_set.has(edge_parents[0]) && node_set.has(edge_parents[1])){
+                graph_elems.push(e);
+            }
+        }
+        else{
+            exclude_elems.push(e);
+        }
+    }
+    //return object to parse
+    return {graph_elems: graph_elems, exclude_elems:exclude_elems};
+};
+
+function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
     /**
-     * 
+     * Builds the cytoscape graph. 
+     * Used on initialization with the global pid, plen, and pname phrases.
+     * Takes these three variables to get matching nodes and edges via selectElements()
+     * Then deletes the past cy graph and creates a new one
+     * Adds in nodes and edges that didn't meet critera after creation so they can be seen
+     * Binds the node click and edge click functions to cy
      */
+    
     
     //set variables from global if not given
     pid_cutoff = pid_cutoff ? pid_cutoff : pid;;
     plen_cutoff = plen_cutoff ? plen_cutoff : plen;;
+    pname_phrase = pname_phrase ? pname_phrase : pname;;
 
+    pid_cutoff = parseInt(pid_cutoff);
+    plen_cutoff = parseInt(plen_cutoff);
+    
     //call SelectElements to parse the pairwise_parser.py output
     all_elems =  selectElements(pid_cutoff, plen_cutoff);
     //elements to include in the graph
@@ -199,6 +225,7 @@ function buildGraph(pid_cutoff, plen_cutoff){
     layout.run();
     
     //run the MCL algorithm to color nodes
+    console.log(new_cy);
     mcl();
 
     //reassign to permanent variable
@@ -236,7 +263,6 @@ function buildGraph(pid_cutoff, plen_cutoff){
         info_text += 'num_cluster_members: ' + ele.data('num_cluster_members') + '<br>'
         
         //Protein name: " + ele.data('id') + "<br> Num Cluster Members: " + ele.data('num_cluster_members');
-        console.log(info_text);
         document.getElementById("info-text").innerHTML = info_text;
         
         //Color neighboring nodes red

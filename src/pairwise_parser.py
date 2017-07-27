@@ -196,7 +196,7 @@ def createRepNode(n):
 def createEdge(e):
     return '\n{data: {source: "'+e.source+'", target: "'+e.target+'", align_len: '+e.align_len+', align_score: '+e.align_score+', percent_id: '+e.percent_id+', id: "'+e.id+'", weight: '+e.align_score+'},\n},\n'
 
-def createCytoscapeWeb(out_filepath):
+def createElementsFile(out_filepath):
 	"""
 	Input is an array of Node objects and an array of Edge objects.
 	Writes out a a network that is in JSON-esque format that cytoscape.js can read
@@ -244,8 +244,7 @@ def main():
 	Creates an XGMML file for viewing with cytoscape
 	"""
 	parseAllVsAllBlast("/Users/parismorgan/Desktop/iMicrobes/network_builder/files/24Jul17_mmox_01/uniref90_mmox_allvall")
-
-	createCytoscapeWeb("/Users/parismorgan/Desktop/iMicrobes/network_builder/web/")
+	createElementsFile("/Users/parismorgan/Desktop/iMicrobes/network_builder/web/")
 	 
 if __name__ == '__main__':
 	main()

@@ -1,0 +1,81 @@
+<link href="style.css" rel="stylesheet" />
+<meta charset=utf-8 />
+<meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
+<title>Protein Network Visualization</title>
+
+<!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script> -->
+
+<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
+
+<!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.js"></script>
+<link href="http://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.css" rel="stylesheet" type="text/css" />
+<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-qtip/2.7.0/cytoscape-qtip.js"></script> -->
+
+<script src="js/cytoscape/dist/cytoscape.js"></script>
+<script src="js/cytoscape-cola.js"></script>
+<script src="js/cola.js"></script>
+<script src="/Users/parismorgan/Desktop/iMicrobes/network_builder/web/js/cytoscape.js-markov-cluster-master/cytoscape-markov-cluster.js"></script>
+<script src="/Users/parismorgan/Desktop/iMicrobes/network_builder/web/js/node_modules/cytoscape-cola/cola.js"></script>
+<script src="/Users/parismorgan/Desktop/iMicrobes/network_builder/web/js/node_modules/cytoscape-cola/cytoscape-cola.js"></script>
+
+</head>
+
+<body>
+<div id='settings'>
+<h3>Settings</h3>
+    Edge % identity minimum: <input id ="pid" type="range" value="90" min="40" max="100" step="1" oninput="updatePidLabel(this.value)" onmouseup="updateCutoff()" />
+    <span id="pid-label">90</span>
+    <br>
+ 
+    Protein length minimum: <input id ="plen" type="range" value="90" min="0" max="600" step="1" oninput="updatePlenLabel(this.value)" onmouseup="updateCutoff()" />
+    <span id="plen-label">90</span>
+    <br>
+
+    Search phrase:
+    <input type="text" id="pname" value="" maxlength="40" />
+    <input type="submit" value="Submit" onclick="updateCutoff()"/>
+    <span id="pname-label"></span>
+    <br>
+
+    Run clustering again:
+    <button type="button" onclick="buildGraph()">Build graph</button>
+
+</div>
+<div id="cy"></div>
+<div id="info">
+    <h3>Information</h3>
+    <div id = "info-text"></div>
+    <div class="container">
+        <h2>Simple Collapsible</h2>
+        <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#demo">Simple collapsible</button>
+        <div id="demo" class="collapse">
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit,
+            sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+            quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        </div>
+</div>
+</div>
+<!-- Load appplication code at the end to ensure DOM is loaded -->
+<!--Put elements here-->
+<script src = "elements.js"></script>
+
+
+<script src = "/Users/parismorgan/Desktop/iMicrobes/network_builder/web/network.js"></script>
+</body>
+</html>
+
+
+   
+    <!-- <form action="pid-select-form" >
+        Select element seq percent id cutoff for drawing graph:
+        <input type="radio" name="pid-select" value="40" onclick="updateElements(this.value)"> 40
+        <input type="radio" name="pid-select" value="60" onclick="updateElements(this.value)"> 60
+        <input type="radio" name="pid-select" value="75" onclick="updateElements(this.value)"> 75
+        <input type="radio" name="pid-select" value="90" onclick="updateElements(this.value)" checked="checked"> 90
+    </form>
+     -->
+    <!-- <button type="button" onclick="mcl()">MCL</button>
+    <br> -->
+    

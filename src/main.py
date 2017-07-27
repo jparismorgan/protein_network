@@ -13,13 +13,19 @@ import glob
 
 import pairwise_parser
 
-def main():
+def cleanProteinName(p_name):
+    bad_chars = ['!', '@', '#', '$', '%','^','&','*','(',')','>','<', ' ']
+    return ''.join([str(char) for char in p_name if char not in bad_chars])
+        
+
+def main():    
     mode = 1
     if mode == 1:
         home_filepath = "/Users/parismorgan/Desktop/iMicrobes/network_builder/"
         db_name = 'uniref90'
-        protein = 'mmox'
-        protein_seq = ">mmoX_protein \nMALSTATKAATDALAANRAPTSVNAQEVHRWLQSFNWDFKNNRTKYATKYKMANETKEQFKLIAKEYARMEAVKDERQFGSLQDALTRLNAGVRVHPKWNETMKVVSNFLEVGEYNAIAATGMLWDSAQAAEQKNGYLAQVLDEIRHTHQCAYVNYYFAKNGQDPAGHNDARRTRTIGPLWKGMKRVFSDGFISGDAVECSLNLQLVGEACFTNPLIVAVTEWAAANGDEITPTVFLSIETDELRHMANGYQTVVSIANDPASAKYLNTDLNNAFWTQQKYFTPVLGMLFEYGSKFKVEPWVKTWNRWVYEDWGGIWIGRLGKYGVESPRSLKDAKQDAYWAHHDLYLLAYALWPTGFFRLALPDQEEMEWFEANYPGWYDHYGKIYEEWRARGCEDPSSGFIPLMWFIENNHPIYIDRVSQVPFCPSLAKGASTLRVHEYNGQMHTFSDQWGERMWLAEPERYECQNIFEQYEGRELSEVIAELHGLRSDGKTLIAQPHVRGDKLWTLDDIKRLNCVFKNPVKAFN*"
+        protein = 'MDH-C.glutamicumlowKm'
+        protein_seq = ">MDH-C.glutamicumlowKm \nMTTAAPQEFTAAVVEKFGHDVTVKDIDLPKPGPHQALVKVLTSGICHTDLHALEGDWPVKPEPPFVPGHEGVGEVVELGPGEHDVKVGDIVGNAWLWSACGTCEYCITGRETQCNEAEYGGYTQNGSFGQYMLVDTRYAARIPDGVDYLEAAPILCAGVTVYKALKVSETRPGQFMVISGVGGLGHIAVQYAAAMGMRVIAVDIADDKLELARKHGAEFTVNARNEDSGEAVQKYTNGGAHGVLVTAVHEAAFGQALDMARRAGTIVFNGLPPGEFPASVFNIVFKGLTIRGSLVGTRQDLAEALDFFARGLIKPTVSECSLDEVNGVLDRMRNGKIDGRVAIRF*"
+
         diamond_exec = home_filepath + "diamond-0.9.9/bin/diamond"   
     elif mode == 2:
         #Begin the python GUI
@@ -65,33 +71,44 @@ def main():
         command = '{0} {1}'.format(diamond_exec, action)
         subprocess.call(command, shell = True)
         """
+    print "Found the reference database."
 
     #Blastp our AA sequence against the DIAMOND database. Output format 5 = BLAST XML.
+    print "Blastp our AA sequence against the DIAMOND database. Output format 5 = BLAST XML"
     action = "blastp --db {0}{1}.dmnd --query {2}{3}.fasta --out {2}{1}_{3}.xml --outfmt 5  --max-target-seqs 1000 --compress 0".format(home_filepath, db_name, save_folder, protein)
     command = '{0} {1}'.format(diamond_exec, action)
     subprocess.call(command, shell=True)
 
+
     #Parse this XML file into a FASTA file.
-    db_protein_path = save_folder + db_name + "_" + protein
-    blast_xml_to_fasta.blast_xml_to_fasta(db_protein_path+'.xml', db_protein_path+'.fasta')
+    print "Parse this XML file into a FASTA file."
+    save_folder_protein = save_folder + db_name + "_" + protein
+    blast_xml_to_fasta.blast_xml_to_fasta(save_folder_protein+'.xml', save_folder_protein+'.fasta')
   
     #Build DIAMOND database of the 1000 sequences from out blastp search
-    action = "makedb --in {0}.fasta --db {0}".format(db_protein_path)
+    print "Build DIAMOND database of the 1000 sequences from out blastp search"
+    action = "makedb --in {0}.fasta --db {0}".format(save_folder_protein)
     command = '{0} {1}'.format(diamond_exec, action)
     subprocess.call(command, shell=True)
    
     #Blastp our 1000 sequences against the DIAMOND database created from them. Functions as an all-against-all blast. Output format 0 = BLAST pairwise format.
-    action = "blastp --db {0}.dmnd --query {0}.fasta --out {0}_allvall --outfmt 0 --max-target-seqs 1000 --compress 0".format(db_protein_path)
+    print "Blastp our 1000 sequences against the DIAMOND database created from them."
+    action = "blastp --db {0}.dmnd --query {0}.fasta --out {0}_allvall --outfmt 0 --max-target-seqs 1000 --compress 0".format(save_folder_protein)
     command = '{0} {1}'.format(diamond_exec, action)
     subprocess.call(command, shell=True)
 
     #Can now call pairwise_parser.py to parse the all versus all result and create the cytoscope file
-    pairwise_parser.parseAllVsAllBlast(db_protein_path + '_allvall')
-    pairwise_parser.createCytoscapeWeb(home_filepath + "web/")
+    print "Parse the all vs all result and create the graph"
+    pairwise_parser.parseAllVsAllBlast(save_folder_protein+ '_allvall')
+    pairwise_parser.createElementsFile(save_folder)
 
+    #Copy network_base.html to the save folder
+    print "Organize files"
+    subprocess.call('cp ' + home_filepath + 'web/network_base.html ' + save_folder, shell = True);
     ##Move files to the new directory (Don't have to do this anymore. Check after fixing the physics sim)
     # for f in glob.glob(db_protein_path+'*'):
     #     shutil.copy(f, save_folder)
+    print "Ready!"
 
 if __name__ == '__main__':
     main()
