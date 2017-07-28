@@ -3,6 +3,7 @@ var layout;     //layout object
 var pid = 85;   //edge percent identity cutoff
 var plen = 400;  //node protein length cutoff
 var pname = ""; //node name substring phrase
+var pnot = "";
 
 var params = {  //parameters for the layout
         name: 'cola',
@@ -57,11 +58,12 @@ function mcl(){
 
 var removed_len;    //used by updateCutoff to keep tracked of removed nodes
 var removed_pname;  //used by updateCutoff to keep tracked of removed nodes
+var removed_pnot;   //used by updateCutoff to keep tracked of removed nodes
 var removed_pid;    //used by updateCutoff to keep tracked of removed edges
 function updateCutoff(){
     /** 
      * Updates the network graph according to cutoffs
-     * Uses protein percent identity (pid), protein length (plen), and protein name substring (pname)  
+     * Uses protein percent identity (pid), protein length (plen), protein name substring (pname), and phrase not in protein's name (pnot)  
      * These are stored in network.html forms and buttons.
      */
     
@@ -69,11 +71,17 @@ function updateCutoff(){
     pid = document.getElementById('pid').value;
     plen = document.getElementById('plen').value;
     pname = document.getElementById('pname').value;
+    pnot = document.getElementById('pnot').value;
     
     //restore previously removed elements
-    if (removed_pid){
-        removed_pid.restore();
-        removed_pid = undefined;
+    if (removed_pname){
+        removed_pname.restore();
+        removed_pname = undefined;
+    }
+    
+    if (removed_pnot){
+        removed_pnot.restore();
+        removed_pnot = undefined;
     }
 
     if (removed_len){
@@ -81,30 +89,46 @@ function updateCutoff(){
         removed_len = undefined;
     }
 
-    if (removed_pname){
-        removed_pname.restore();
-        removed_pname = undefined;
+    if (removed_pid){
+        removed_pid.restore();
+        removed_pid = undefined;
     }
 
+    //selector documentation: http://js.cytoscape.org/#selectors
     //remove nodes by pname
     if (pname !== "" && pname !== undefined){
-        rem_pname = cy.elements('node[protein_name !*="' + pname + '"]');
+        var pnames = pname.split(' ');
+        var selector = "";
+        for (var n in pnames){
+            selector += 'node[protein_name !@*="' + pnames[n] + '"],';
+        }
+        selector = selector.replace(/(^,)|(,$)/g, "")
+        console.log(selector);
+        var rem_pname = cy.elements(selector);
         removed_pname = cy.remove(rem_pname.union(rem_pname.connectedEdges()));
     }
 
+    //remove nodes by pnot
+    if (pnot !== "" && pnot !== undefined){
+        var rem_pnot = cy.elements('node[protein_name @*="' + pnot + '"]');
+        removed_pnot = cy.remove(rem_pnot.union(rem_pnot.connectedEdges()));
+    }
+
     //remove nodes by plen
-    rem_plen = cy.elements("node[length < " + plen + "]");
+    var rem_plen = cy.elements("node[length < " + plen + "]");
     removed_len = cy.remove(rem_plen.union(rem_plen.connectedEdges()));
 
     //remove edges by pid
-    rem_pid = cy.elements("edge[percent_id < " + pid+ "]");
+    var rem_pid = cy.elements("edge[percent_id < " + pid+ "]");
     removed_pid = rem_pid;
     cy.remove(rem_pid);
 
     //update html span's
     document.getElementById("pname-label").innerHTML = "Search term: " + pname;
+    document.getElementById("pnot-label").innerHTML = "Exclusion term: " + pnot;
     document.getElementById("plen-label").innerHTML = plen;
     document.getElementById("pid-label").innerHTML = pid;
+    
 }
 
 function updatePidLabel(pid_cutoff){
@@ -198,9 +222,9 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
      new_cy = window.cy = cytoscape({
         container: document.getElementById('cy'),
         elements: graph_elems,
-        zoom: .1,
-        minZoom: .05,
-        maxZoom: .2,
+        zoom: .3,
+        minZoom: .1,
+        maxZoom: 1.2,
         style: [{
         selector: 'node',
             style: {
@@ -227,9 +251,6 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
     console.log(new_cy);
     mcl();
 
-    //reassign to permanent variable
-    cy = new_cy;
-
     //Add in the rest of the edges, update labels & cutoff to exclude them
     cy.ready(function(event){
         new_cy.add(exclude_elems);
@@ -238,19 +259,19 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
         updateCutoff();
     });
 
-    //on node click funciton
-    var node_neighbors = null;
-    cy.$('node').on('click', function(e){
-        
+    //reassign to permanent variable
+    cy = new_cy;
+
+    var past_node;
+    function displayNodeInfo(e){
         // var len = colors.length, text = "[";
         // for (var i = 0; i < len; i++) {            
         //     text += '"'+ colors[i] + '",'
         // }
         // text += ']'
         // document.getElementById("info").innerHTML = text;
-
+        
         var ele = e.target;
-        console.log(ele.data());
         
         //Update info box
         info_text = ""
@@ -275,7 +296,36 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
         node_neighbors.animate({
             style: { lineColor: 'red' }
         });
+
+
+        //Color target node
+        if (past_node && past_node !== ele){
+            past_node.animate({
+                style: {
+                'border-width': 0,
+                }
+            });
+        }
+        ele.animate({
+            style: {
+                'border-width': 10,
+                'border-color': 'red',
+            }
+        })
+        past_node = ele;
+    }
+
+    //on node click funciton
+    var node_neighbors = null;
+    cy.$('node').on('click', function(e){
+        displayNodeInfo(e);
     });
+    
+    //on hover
+    cy.$('node').on('mouseover', function(e){
+        displayNodeInfo(e);
+    });
+
 
     //on edge click function
     cy.$('edge').on('click', function(e){
