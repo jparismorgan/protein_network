@@ -1,7 +1,7 @@
 var cy;         //graph object
 var layout;     //layout object
-var pid = 60;   //edge percent identity cutoff
-var plen = 90;  //node protein length cutoff
+var pid = 85;   //edge percent identity cutoff
+var plen = 400;  //node protein length cutoff
 var pname = ""; //node name substring phrase
 
 var params = {  //parameters for the layout
@@ -176,7 +176,6 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
      * Binds the node click and edge click functions to cy
      */
     
-    
     //set variables from global if not given
     pid_cutoff = pid_cutoff ? pid_cutoff : pid;;
     plen_cutoff = plen_cutoff ? plen_cutoff : plen;;
@@ -206,8 +205,8 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
         selector: 'node',
             style: {
             // 'content': 'data(name)',
-            'width': 'mapData(num_cluster_members, 0, 150, 40,  90)',  //size gradient by # clust membs 
-            'height': 'mapData(num_cluster_members, 0, 150, 40, 90)', 
+            'width': 'mapData(num_cluster_members, 0, 120, 40,  90)',  //size gradient by # clust membs 
+            'height': 'mapData(num_cluster_members, 0, 120, 40, 90)', 
             }
         },
         {
@@ -259,7 +258,9 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
         info_text += 'source_organism: ' + ele.data('source_organism') + '<br>'
         info_text += 'length: ' + ele.data('length') +  '<br>'
         info_text += 'NCBI_taxonomy: ' + ele.data('NCBI_taxonomy') + '<br>'
-        info_text += 'UniProtKB_accession: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'">' +ele.data('UniProtKB_accession')+'</a><br>'
+        info_text += 'UniProtKB_accession: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
+        info_text += 'Uniparc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'
+        info_text += 'NCBI_taxonomy: <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=' + ele.data('NCBI_taxonomy') +'" target="_blank">' +ele.data('NCBI_taxonomy')+'</a><br>'
         info_text += 'num_cluster_members: ' + ele.data('num_cluster_members') + '<br>'
         
         //Protein name: " + ele.data('id') + "<br> Num Cluster Members: " + ele.data('num_cluster_members');
@@ -290,6 +291,5 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
         document.getElementById("info-text").innerHTML = info_text;
     });
 }
-
 //build graph initially
 buildGraph();
