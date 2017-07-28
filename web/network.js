@@ -56,10 +56,12 @@ function mcl(){
     }
 };
 
-var removed_len;    //used by updateCutoff to keep tracked of removed nodes
-var removed_pname;  //used by updateCutoff to keep tracked of removed nodes
-var removed_pnot;   //used by updateCutoff to keep tracked of removed nodes
-var removed_pid;    //used by updateCutoff to keep tracked of removed edges
+var removed_elems;
+
+var past_pid = pid;
+var past_plen = plen;
+var past_pname = "";
+var past_pnot = "";
 function updateCutoff(){
     /** 
      * Updates the network graph according to cutoffs
@@ -72,56 +74,52 @@ function updateCutoff(){
     plen = document.getElementById('plen').value;
     pname = document.getElementById('pname').value;
     pnot = document.getElementById('pnot').value;
+
+    if (removed_elems === undefined){
+        removed_elems = cy.collection();
+    }
+
+    if ( past_pid < pid || past_plen < plen || past_pname !== pname || past_pnot !== pnot){
+        //restore previously removed elements
+        if (removed_elems){
+            removed_elems.restore();
+        }
+        removed_elems = cy.collection();
+    }
     
-    //restore previously removed elements
-    if (removed_pname){
-        removed_pname.restore();
-        removed_pname = undefined;
-    }
-    
-    if (removed_pnot){
-        removed_pnot.restore();
-        removed_pnot = undefined;
-    }
-
-    if (removed_len){
-        removed_len.restore();
-        removed_len = undefined;
-    }
-
-    if (removed_pid){
-        removed_pid.restore();
-        removed_pid = undefined;
-    }
-
     //selector documentation: http://js.cytoscape.org/#selectors
     //remove nodes by pname
     if (pname !== "" && pname !== undefined){
         var pnames = pname.split(' ');
-        var selector = "";
+        var selector_pname = "";
         for (var n in pnames){
-            selector += 'node[protein_name !@*="' + pnames[n] + '"],';
+            selector_pname += 'node[protein_name !@*="' + pnames[n] + '"],';
         }
-        selector = selector.replace(/(^,)|(,$)/g, "")
-        console.log(selector);
-        var rem_pname = cy.elements(selector);
-        removed_pname = cy.remove(rem_pname.union(rem_pname.connectedEdges()));
+        selector_pname = selector_pname.replace(/(^,)|(,$)/g, "")
+        var rem_pname = cy.elements(selector_pname);
+        removed_elems = removed_elems.union(rem_pname.union(rem_pname.connectedEdges()));
     }
 
     //remove nodes by pnot
     if (pnot !== "" && pnot !== undefined){
-        var rem_pnot = cy.elements('node[protein_name @*="' + pnot + '"]');
-        removed_pnot = cy.remove(rem_pnot.union(rem_pnot.connectedEdges()));
+        var pnots = pnot.split(' ');
+        var selector_pnot = "";
+        for (var n in pnots){
+            selector_pnot += 'node[protein_name @*="' + pnots[n] + '"],';
+        }
+        selector_pnot = selector_pnot.replace(/(^,)|(,$)/g, "")
+        var rem_pnot = cy.elements(selector_pnot);
+        removed_elems = removed_elems.union(rem_pname.union(rem_pname.connectedEdges()));
     }
 
     //remove nodes by plen
     var rem_plen = cy.elements("node[length < " + plen + "]");
-    removed_len = cy.remove(rem_plen.union(rem_plen.connectedEdges()));
+    removed_elems = removed_elems.union(rem_plen.union(rem_plen.connectedEdges()));
 
     //remove edges by pid
-    var rem_pid = cy.elements("edge[percent_id < " + pid+ "]");
-    removed_pid = rem_pid;
-    cy.remove(rem_pid);
+    removed_elems = removed_elems.union(cy.elements("edge[percent_id < " + pid+ "]"));
+    
+    cy.remove(removed_elems)
 
     //update html span's
     document.getElementById("pname-label").innerHTML = "Search term: " + pname;
@@ -129,6 +127,10 @@ function updateCutoff(){
     document.getElementById("plen-label").innerHTML = plen;
     document.getElementById("pid-label").innerHTML = pid;
     
+    past_pid = pid
+    past_plen = plen
+    past_pname = pname
+    past_pnot = pnot
 }
 
 function updatePidLabel(pid_cutoff){
@@ -229,8 +231,8 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
         selector: 'node',
             style: {
             // 'content': 'data(name)',
-            'width': 'mapData(num_cluster_members, 0, 120, 40,  90)',  //size gradient by # clust membs 
-            'height': 'mapData(num_cluster_members, 0, 120, 40, 90)', 
+            'width': 'mapData(num_cluster_members, 0, 120, 40,  120)',  //size gradient by # clust membs 
+            'height': 'mapData(num_cluster_members, 0, 120, 40, 120)', 
             }
         },
         {
@@ -248,11 +250,10 @@ function buildGraph(pid_cutoff, plen_cutoff, pname_phrase){
     layout.run();
     
     //run the MCL algorithm to color nodes
-    console.log(new_cy);
     mcl();
 
     //Add in the rest of the edges, update labels & cutoff to exclude them
-    cy.ready(function(event){
+    new_cy.ready(function(event){
         new_cy.add(exclude_elems);
         updatePidLabel(pid_cutoff);
         updatePlenLabel(plen_cutoff);

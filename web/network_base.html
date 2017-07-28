@@ -25,18 +25,24 @@
 <body>
 <div id='settings'>
 <h3>Settings</h3>
-    Edge % identity minimum: <input id ="pid" type="range" value="90" min="40" max="100" step="1" oninput="updatePidLabel(this.value)" onmouseup="updateCutoff()" />
-    <span id="pid-label">75</span>
+    Edge % identity minimum: <input id ="pid" type="range" value="90" min="45" max="100" step="1" oninput="updatePidLabel(this.value)" onmouseup="updateCutoff()" />
+    <span id="pid-label">85</span>
     <br>
  
     Protein length minimum: <input id ="plen" type="range" value="90" min="0" max="600" step="1" oninput="updatePlenLabel(this.value)" onmouseup="updateCutoff()" />
-    <span id="plen-label">300</span>
+    <span id="plen-label">400</span>
     <br>
 
     Search phrase:
     <input type="text" id="pname" value="" maxlength="40" />
     <input type="submit" value="Submit" onclick="updateCutoff()"/>
     <span id="pname-label"></span>
+    <br>
+
+    Phrase to exclude:
+    <input type="text" id="pnot" value="" maxlength="40" />
+    <input type="submit" value="Submit" onclick="updateCutoff()"/>
+    <span id="pnot-label"></span>
     <br>
 
     Run clustering again:

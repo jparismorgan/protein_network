@@ -157,7 +157,7 @@ def parseAllVsAllBlast(blast_allvsall_filepath):
 		elif re.search('Identities =', line):
 			percent_id = line.split()[3].strip()
 			percent_id = percent_id.translate(None, "(),%")
-			if int(percent_id) > 40:
+			if int(percent_id) > 45:
 				#Don't add edge from node to itself, or duplicate edge
 				try:
 					query in existing_edges[hit]

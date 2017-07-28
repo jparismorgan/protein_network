@@ -51,7 +51,7 @@ def main(home_filepath, db_name, protein, protein_seq, diamond_exec):
 
     #Blastp our AA sequence against the DIAMOND database. Output format 5 = BLAST XML.
     print "Blastp our AA sequence against the DIAMOND database. Output format 5 = BLAST XML"
-    action = "blastp --db {0}{1}.dmnd --query {2}{3}.fasta --out {2}{1}_{3}.xml --outfmt 5  --max-target-seqs 400 --compress 0".format(home_filepath, db_name, save_folder, protein)
+    action = "blastp --db {0}{1}.dmnd --query {2}{3}.fasta --out {2}{1}_{3}.xml --outfmt 5  --max-target-seqs 300 --compress 0".format(home_filepath, db_name, save_folder, protein)
     command = '{0} {1}'.format(diamond_exec, action)
     subprocess.call(command, shell=True)
 
@@ -68,7 +68,7 @@ def main(home_filepath, db_name, protein, protein_seq, diamond_exec):
    
     #Blastp our 1000 sequences against the DIAMOND database created from them. Functions as an all-against-all blast. Output format 0 = BLAST pairwise format.
     print "Blastp our 1000 sequences against the DIAMOND database created from them."
-    action = "blastp --db {0}.dmnd --query {0}.fasta --out {0}_allvall --outfmt 0 --max-target-seqs 400 --compress 0".format(save_folder_protein)
+    action = "blastp --db {0}.dmnd --query {0}.fasta --out {0}_allvall --outfmt 0 --max-target-seqs 300 --compress 0".format(save_folder_protein)
     command = '{0} {1}'.format(diamond_exec, action)
     subprocess.call(command, shell=True)
 
@@ -88,7 +88,7 @@ def main(home_filepath, db_name, protein, protein_seq, diamond_exec):
 if __name__ == '__main__':
     home_filepath = "/Users/parismorgan/Desktop/iMicrobes/network_builder"
     db_name = 'uniref90'
-    protein = 'mmox'
-    protein_seq = "MALSTATKAATDALAANRAPTSVNAQEVHRWLQSFNWDFKNNRTKYATKYKMANETKEQFKLIAKEYARMEAVKDERQFGSLQDALTRLNAGVRVHPKWNETMKVVSNFLEVGEYNAIAATGMLWDSAQAAEQKNGYLAQVLDEIRHTHQCAYVNYYFAKNGQDPAGHNDARRTRTIGPLWKGMKRVFSDGFISGDAVECSLNLQLVGEACFTNPLIVAVTEWAAANGDEITPTVFLSIETDELRHMANGYQTVVSIANDPASAKYLNTDLNNAFWTQQKYFTPVLGMLFEYGSKFKVEPWVKTWNRWVYEDWGGIWIGRLGKYGVESPRSLKDAKQDAYWAHHDLYLLAYALWPTGFFRLALPDQEEMEWFEANYPGWYDHYGKIYEEWRARGCEDPSSGFIPLMWFIENNHPIYIDRVSQVPFCPSLAKGASTLRVHEYNGQMHTFSDQWGERMWLAEPERYECQNIFEQYEGRELSEVIAELHGLRSDGKTLIAQPHVRGDKLWTLDDIKRLNCVFKNPVKAFN*"
+    protein = 'das1'
+    protein_seq = "MALAKAASINDDIHDLTMRAFRCYVLDLVEQYEGGHPGSAMGMVAMGIALWKYTMKYSTNDPTWFNRDRFVLSNGHVCLFQYLFQHLSGLKSMTEKQLKSYHSSDYHSKCPGHPEIENEAVEVTTGPLGQGISNSVGLAIASKNLGALYNKPGYEVVNNTTYCIVGDACLQEGPALESISFAGHLGLDNLVVIYDNNQVCCDGSVDIANTEDISAKFRACNWNVIEVEDGARDVATIVKALELAGAEKNRPTLINVRTIIGTDSAFQNHCAAHGSALGEEGIRELKIKYGFNPSQKFHFPQEVYDFFSDIPAKGDEYVSNWNKLVSSYVKEFPELGAEFQSRVKGELPKNWKSLLPNNLPNEDTATRTSARAMVRALAKDVPNVIAGSADLSVSVNLPWPGSKYFENPQLATQCGLAGDYSGRYVEFGIREHCMCAIANGLAAFNKGTFLPITSSFYMFYLYAAPALRMAALQELKAIHIATHDSIGAGEDGPTHQPIAQSALWRAMPNFYYMRPGDASEVRGLFEKAVELPLSTLFSLSRHEVPQYPGKSSIELAKRGGYVFEDAKDADIQLIGAGSELEQAVKTARILRSRGLKVRILSFPCQRLFDEQSVGYRRSVLQRGKVPTVVIEAYVAYGWERYATAGYTMNTFGKSLPVEDVYEYFGFNSSEISKKIEGYVRAVKANPDLLYEFIDLTEKPKHDQNHL*"
     diamond_exec = home_filepath + "/diamond-0.9.9/bin/diamond"   
     main(home_filepath, db_name, protein, protein_seq, diamond_exec)
