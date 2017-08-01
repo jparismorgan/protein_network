@@ -1,5 +1,6 @@
 body { 
   font: 14px helvetica neue, helvetica, arial, sans-serif;
+  margin: 0px 0px 0px 0px;
 }
 
 form {
@@ -10,13 +11,19 @@ h3 {
   margin: 0px 0px 0px 0px;
 }
 
-#settings {
+#settings-area {
   height: 15%;
   width: 60%;
   position: absolute;
-  left: 0;
   top: 0%;
   background-color: beige;
+}
+
+#settings-loading {
+  position: absolute;
+  top: 50px;
+  left: 440px;
+  display: none;
 }
 
 #cy {
@@ -35,4 +42,57 @@ h3 {
   top: 0;
   background-color: beige;
 
+}
+
+.hoverinfo p {
+  display: none;
+  color: #000000;
+}
+
+.hoverinfo:hover p {
+  background-color: rgba(255, 255, 255, 0.7);
+  display: block;
+  margin: 0;
+}
+
+#pname-settings{
+  display: none;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid black;
+  width: 95%;
+}
+
+#pid-settings{
+    display: none;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid black;
+  width: 95%;
+}
+
+#plen-settings{
+    display: none;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid black;
+  width: 95%;
+}
+
+#porg-settings{
+    display: none;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid black;
+  width: 95%;
+}
+
+#pnot-settings{
+    display: none;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid black;
+  width: 95%;
+}
+
+#build-settings{
+    display: none;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 2px solid black;
+  width: 95%;
 }
