@@ -1,78 +1,136 @@
-<link href="../../web/style.css" rel="stylesheet" />
-<meta charset=utf-8 />
-<meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
-<title>Protein Network Visualization</title>
-
-<!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script> -->
-
-<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
-
-<!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.js"></script>
-<link href="http://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.css" rel="stylesheet" type="text/css" />
-<script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-qtip/2.7.0/cytoscape-qtip.js"></script> -->
-
-<script src="../../web/js/cytoscape/dist/cytoscape.js"></script>
-<script src="../../web/js/cytoscape-cola.js"></script>
-<script src="../../web/js/cola.js"></script>
-<script src="../../web/js/cytoscape.js-markov-cluster-master/cytoscape-markov-cluster.js"></script>
-<script src="../../web/js/node_modules/cytoscape-cola/cola.js"></script>
-<script src="../../web/js/node_modules/cytoscape-cola/cytoscape-cola.js"></script>
-
+<head>
+    <link rel="icon" type="image/png" sizes="32x32" href="../../web/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="../../web/images/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../web/images/favicon-16x16.png">
+    <meta charset=utf-8 />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui">
+    <title>Protein Network Visualization</title>
+    <link rel="shortcut icon" href="http://sstatic.net/stackoverflow/img/favicon.ico">
+    <link href="../../web/style.css" rel="stylesheet" />
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="../../web/js/cytoscape/dist/cytoscape.js"></script>
+    <script src="../../web/js/cytoscape.js-markov-cluster-master/cytoscape-markov-cluster.js"></script>
+    <script src="../../web/js/node_modules/cytoscape-cola/cola.js"></script>
+    <script src="../../web/js/node_modules/cytoscape-cola/cytoscape-cola.js"></script>
 </head>
 
 <body>
-<div id='settings'>
-<h3>Settings</h3>
-    Edge % identity minimum: <input id ="pid" type="range" value="90" min="45" max="100" step="1" oninput="updatePidLabel(this.value)" onmouseup="updateCutoff()" />
+<div id='settings-area'>
+    <h3>Settings</h3>
+    
+    <span onmouseover="showPidSettings()" onmouseout="hideSettings('pid-settings')"> Edge % identity minimum: </span>
+    <input id ="pid" type="range" value="90" min="45" max="100" step="1" oninput="updatePidLabel(this.value)" onmouseup="updateCutoff()" />
     <span id="pid-label">85</span>
-    <br>
- 
-    Protein length minimum: <input id ="plen" type="range" value="90" min="0" max="2000" step="1" oninput="updatePlenLabel(this.value)" onmouseup="updateCutoff()" />
-    <span id="plen-label">400</span>
+    <div id="pid-settings"></div>
     <br>
 
-    Search phrase:
-    <input type="text" id="pname" value="" maxlength="40" />
+    <span onmouseover="showPlenSettings()" onmouseout="hideSettings('plen-settings')"> Protein length minimum:  </span>
+    <input id ="plen" type="range" value="90" min="0" max="2000" step="1" oninput="updatePlenLabel(this.value)" onmouseup="updateCutoff()" />
+    <span id="plen-label">400</span>
+    <div id="plen-settings"></div>
+    <br>
+
+    <span onmouseover="showPnameSettings()" onmouseout="hideSettings('pname-settings')">Name search phrase: </span>
+    <input type="text" id="pname" value="" maxlength="60" />
     <input type="submit" value="Submit" onclick="updateCutoff()"/>
     <span id="pname-label"></span>
+    <div id="pname-settings"></div>
     <br>
 
-    Phrase to exclude:
-    <input type="text" id="pnot" value="" maxlength="40" />
+    <span onmouseover="showPorgSettings()" onmouseout="hideSettings('porg-settings')">Organism search phrase: </span>
+    <input type="text" id="porg" value="" maxlength="60" />
+    <input type="submit" value="Submit" onclick="updateCutoff()"/>
+    <span id="porg-label"></span>
+    <div id="porg-settings"></div>
+    <br>
+
+    <span onmouseover="showPnotSettings()" onmouseout="hideSettings('pnot-settings')">Name phrase to exclude: </span>
+    <input type="text" id="pnot" value="" maxlength="60" />
     <input type="submit" value="Submit" onclick="updateCutoff()"/>
     <span id="pnot-label"></span>
+    <div id="pnot-settings"></div>
     <br>
 
-    Run clustering again:
+    <span onmouseover="showBuildSettings()" onmouseout="hideSettings('build-settings')">Run clustering again: </span>
     <button type="button" onclick="buildGraph()">Build graph</button>
-
+    <div id="build-settings"></div>
+    </div>
 </div>
 <div id="cy"></div>
 <div id="info">
     <h3>Information</h3>
     <div id = "info-text"></div>
-    <div id = "loading">
-        https://www.creditmutuel.fr/cmne/fr/banques/webservices/nswr/images/loading.gif
-    </div>
 </div>
+<div id = "selection-area">
+    <h3>Element Selection</h3>
+    <button type="button" onclick="selectCheckBox(true)">Select All</button>
+    <button type="button" onclick="selectCheckBox(false)">Select None</button>
+    <br>
+    <button type="button" onclick="clearSelected()">Clear Selected</button>
+    <br>
+    <button type="button" onclick="exportRepNodes()">Export Representative Nodes Fasta</button>
+    <button type="button" onclick="exportClusterAndRepNodes()">Export Cluster + Rep Nodes Fasta</button>
+    <ul>
+        <!-- This is where selected nodes go-->
+    </ul>
+</div>
+
 </div>
 <!-- Load appplication code at the end to ensure DOM is loaded -->
-<!--Put elements here-->
 <script src = "elements.js"></script>
 <script src = "../../web/network.js"></script>
+<script src = "fasta_js_map.js"></script>
+<script>
+        function showPidSettings(){
+            document.getElementById("pid-settings").style.display = "block"
+            document.getElementById("pid-settings").innerHTML =    `Filters out edges if the percent identity between the two proteins is less than set value <br>`                                                                    
+            }
+         function showPlenSettings(){
+            document.getElementById("plen-settings").style.display = "block"
+            document.getElementById("plen-settings").innerHTML =   `Filters out proteins if their sequence length is less than set value <br>`                                                                    
+        }   
+        
+        function showPnameSettings(){
+            document.getElementById("pname-settings").style.display = "block"
+            document.getElementById("pname-settings").innerHTML =  `Searches for terms to keep in the graph based on protein name: <br>
+                                                                    Term1,Term2 --> Keep anything with Term1 or Term2 in the name  <br>
+                                                                    Term1 Term2 --> Keep anything with Term1 or Term2 in the name  <br>
+                                                                    Term1&Term2 --> Keep anything with Term1 and Term2 in the name <br>` 
+        }    
+                                                                    
+        function showPnotSettings(){
+            document.getElementById("pnot-settings").style.display = "block"
+            document.getElementById("pnot-settings").innerHTML =  `Searches for terms to exlclude from the graph based on protein name: <br>
+                                                                    Term1,Term2 --> Remove anything with Term1 or Term2 in the name  <br>
+                                                                    Term1 Term2 --> Remove anything with Term1 or Term2 in the name  <br>
+                                                                    Term1&Term2 --> Remove anything with Term1 and Term2 in the name <br>` 
+        }   
+
+        function showPorgSettings(){
+            document.getElementById("porg-settings").style.display = "block"
+            document.getElementById("porg-settings").innerHTML =   `Searches for terms to keep in the graph based on the protein organism: <br>
+                                                                    IMPORTANT: The UniRef90 database merges clusters regardless of organism <br>
+                                                                    Clusters will contain sequences from multiple organismsm, and you are only searching by the representative member<br>
+                                                                    Term1,Term2 --> Keep anything with Term1 or Term2 in the organism name  <br>
+                                                                    Term1 Term2 --> Keep anything with Term1 or Term2 in the organism name  <br>
+                                                                    Term1&Term2 --> Keep anything with Term1 and Term2 in the organism name <br>` 
+        }   
+
+        function showBuildSettings(){
+            document.getElementById("build-settings").style.display = "block"
+            document.getElementById("build-settings").innerHTML =   `Re-runs the graph creation. <br>
+                                                                     First, layout graph elements using a physics based layout, roughly aligning nodes close together based on edge length (% identity) and weight (alignment score) <br>
+                                                                     Second, color graph elements using the MCL algorithm <br>
+                                                                    `
+        }   
+
+        function hideSettings(id){
+            document.getElementById(id).style.display = "none"
+            document.getElementById(id).innerHTML = ""
+        }
+    </script>
+
 </body>
 </html>
 
-    <!-- <form action="pid-select-form" >
-        Select element seq percent id cutoff for drawing graph:
-        <input type="radio" name="pid-select" value="40" onclick="updateElements(this.value)"> 40
-        <input type="radio" name="pid-select" value="60" onclick="updateElements(this.value)"> 60
-        <input type="radio" name="pid-select" value="75" onclick="updateElements(this.value)"> 75
-        <input type="radio" name="pid-select" value="90" onclick="updateElements(this.value)" checked="checked"> 90
-    </form>
-     -->
-    <!-- <button type="button" onclick="mcl()">MCL</button>
-    <br> -->
     

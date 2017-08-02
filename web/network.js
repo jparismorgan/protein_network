@@ -130,12 +130,9 @@ function selectElemsFromCy(search_term, search_field, exclude_bool){
             selector += 'node['+search_field+' '+selector_pre+'@*="' + search_term + '"]'; 
         }
     } 
-    console.log(selector)
     //get the nodes to remove
     var selector_matches = cy.elements(selector);
-    console.log(selector_matches)
     //remove these nodes and their connected edges. add all to removed_elems array
-    console.log(typeof selector_matches)
     return selector_matches.union(selector_matches.connectedEdges())
 
 }
@@ -354,7 +351,6 @@ function buildGraph(){
 
     //initialize collection
     if (firstRun === true){
-        console.log("first run")
         firstRun = false
         selected_elems = cy.collection()
     }
@@ -365,25 +361,20 @@ function buildGraph(){
      * Displays information about the node clicked on or hovering over
      */
     function displayNodeInfo(e){
-        // var len = colors.length, text = "[";
-        // for (var i = 0; i < len; i++) {            
-        //     text += '"'+ colors[i] + '",'
-        // }
-        // text += ']'
-        // document.getElementById("info").innerHTML = text;
-        
         var ele = e.target;
-        //console.log(ele);
         //Update info box
         info_text = ""
         info_text += 'protein_name: ' + ele.data('protein_name') + '<br>'
-        info_text += 'source_organism: ' + ele.data('source_organism') + '<br>'
         info_text += 'length: ' + ele.data('length') +  '<br>'
-        info_text += 'NCBI_taxonomy: ' + ele.data('NCBI_taxonomy') + '<br>'
-        info_text += 'UniProtKB_accession: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
-        info_text += 'Uniparc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'
+        info_text += 'source_organism: ' + ele.data('source_organism') + '<br>'
         info_text += 'NCBI_taxonomy: <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=' + ele.data('NCBI_taxonomy') +'" target="_blank">' +ele.data('NCBI_taxonomy')+'</a><br>'
         info_text += 'num_cluster_members: ' + ele.data('num_cluster_members') + '<br>'
+        info_text += 'UniProtKB accession: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
+        info_text += 'UniProtKB ID: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_ID') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
+        info_text += 'UniRef90: <a href="http://www.uniprot.org/uniref/' + ele.data('id') +'" target="_blank">' +ele.data('id')+'</a><br>'
+        info_text += 'UniParc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'
+        
+        
         
         //Protein name: " + ele.data('id') + "<br> Num Cluster Members: " + ele.data('num_cluster_members');
         document.getElementById("info-text").innerHTML = info_text;
@@ -416,30 +407,25 @@ function buildGraph(){
         past_node = ele;
     }
     
-    
-    //console.log(selected_elems)
     /**
      * Displays node info on click
      * Adds element to selected elements if shift key is held down
      */
-    cy.$('node').on('click', function(e){
-        if (shifted){
-            //add element to selected elems
-            selected_elems = selected_elems.add(e.target)
-            //update the checkbox to include it
-            //get the <ul> list
-            var ul = document.getElementById("selection-area")     
-            //create <li> element
-            var li = document.createElement('li');
-            //add data to li
-            var ele = e.target;
-            li.innerHTML = ele.data('protein_name') + " " + ele.data('UniProtKB_accession')
-            //append li to ul
-            ul.appendChild(li)
+    cy.$("node").on("click", function(e) {
+      if (shifted) {
+        var ele = e.target;
+        if (!selected_elems.contains(ele)){
+            //update the checkbox to include it        
+            var prot_name = ele.data("protein_name");
+            var uniprotkb = ele.data("UniProtKB_accession");
+            var uniparc = ele.data("UniParc_ID");
+            var num_cluster_members = ele.data("num_cluster_members");
+            $("#selection-area ul").append('<li><label for="' + uniparc + '"><input type="checkbox" name="' + uniparc + '" id="' + uniparc + '">' + prot_name + ": " + uniprotkb + ". Cluster members: "+num_cluster_members+"</label></li>");
         }
-        console.log(selected_elems)
-
-        displayNodeInfo(e);
+        //add element to selected elems
+        selected_elems = selected_elems.add(ele);
+      }
+      displayNodeInfo(e);
     });
     
     //on hover
@@ -472,3 +458,135 @@ $(document).on('keyup keydown', function(e){
     shifted = e.shiftKey
 } );
 
+/**
+ * Checks or unchecks all li -> label -> input checkboxes that are in selected_elems
+ * @param {bool} checked - if true, check all selected elements, otherwise uncheck
+ */
+function selectCheckBox(checked){
+    for (var i = 0; i < selected_elems.length; i++){
+        var ele = selected_elems[i]
+        var uniparc = ele.data("UniParc_ID");
+        document.getElementById(uniparc).checked = checked;
+
+    }
+}
+
+/**
+ * Finds all selected li elements in #selection-area
+ * Removes them (lie, label, & input)
+ * Removes them from selected_elems
+ */
+function clearSelected() {
+  //iterate througha all li elements in #selection-area
+  var listItems = $("#selection-area li");
+  listItems.each(function(idx, li) {
+    //get the li element
+    var ele_li = $(li);
+    //get the html checkbox value
+    var ele_checkbox = ele_li.find("label").find("input")[0].checked;
+    if (ele_checkbox === true) {
+      //remove the li
+      ele_li.remove();
+
+      //get the uniparc identifier to get the correct element from selected_elems
+      var ele_uniparc = ele_li.find("label")[0].htmlFor;
+      //select the element from the cy graph
+      var ele = cy.elements('node[UniParc_ID = "' + ele_uniparc + '"]')[0];
+      //remove this element from the selected_elems collection
+      selected_elems = selected_elems.difference(ele);
+    }
+  });
+}
+/**
+ * 
+ */
+function exportRepNodes(){
+    //put all selected, and tick-box checked, elements into download_elems
+    var download_elems = []
+    for (var i = 0; i < selected_elems.length; i++){
+        if (document.getElementById(selected_elems[i].data("UniParc_ID")).checked == true){
+            download_elems.push(selected_elems[i])
+        }
+    }
+    
+    //
+
+
+    return
+    var strData = "data to write"
+    var strFileName = "filename.txt"
+    strMimeType = "text/plain"
+    var D = document,
+        a = D.createElement("a"),
+        d = strData,
+        n = strFileName,
+        t = strMimeType || "text/plain";
+
+    //build download link:
+    a.href = "data:" + strMimeType + "charset=utf-8," + escape(strData);
+
+    if (window.MSBlobBuilder) { // IE10
+        var bb = new MSBlobBuilder();
+        bb.append(strData);
+        return navigator.msSaveBlob(bb, strFileName);
+    } /* end if(window.MSBlobBuilder) */
+
+    if ('download' in a) { //FF20, CH19
+        a.setAttribute("download", n);
+        a.innerHTML = "downloading...";
+        D.body.appendChild(a);
+        setTimeout(function() {
+            var e = D.createEvent("MouseEvents");
+            e.initMouseEvent("click", true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            a.dispatchEvent(e);
+            D.body.removeChild(a);
+        }, 66);
+        return true;
+    }; /* end if('download' in a) */
+
+
+    //do iframe dataURL download: (older W3)
+    var f = D.createElement("iframe");
+    D.body.appendChild(f);
+    f.src = "data:" + (A[2] ? A[2] : "application/octet-stream") + (window.btoa ? ";base64" : "") + "," + (window.btoa ? window.btoa : escape)(strData);
+    setTimeout(function() {
+        D.body.removeChild(f);
+    }, 333);
+    return true;
+}
+
+/**
+ * 
+ */
+ function exportClusterAndRepNodes(){
+ 
+ }
+
+
+
+
+
+//EXTRA TO DOWNLOAD FILES
+// var textToWrite = "test text"//document.getElementById("inputTextToSave").value;
+// var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
+// var fileNameToSaveAs = "filename2.txt"//document.getElementById("inputFileNameToSaveAs").value;
+// var downloadLink = document.createElement("a");
+// downloadLink.download = fileNameToSaveAs;
+// downloadLink.innerHTML = "Download File";
+// if (window.webkitURL != null)
+// {
+//     // Chrome allows the link to be clicked
+//     // without actually adding it to the DOM.
+//     downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+// }
+// else
+// {
+//     // Firefox requires the link to be added to the DOM
+//     // before it can be clicked.
+//     downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+//     downloadLink.onclick = destroyClickedElement;
+//     downloadLink.style.display = "none";
+//     document.body.appendChild(downloadLink);
+// }
+
+// downloadLink.click();
