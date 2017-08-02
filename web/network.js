@@ -268,6 +268,7 @@ function selectElements(pid_cutoff, plen_cutoff){
 var graph_elems     //elems to have in graph layout 
 var exclude_elems   //elems to not have in graph layout
 var firstRun = true //variable to re-run buildGraph() on the first initialization (cytoscape is wierd with it's layout engine)
+var selected_elems = null //elems to put in the selection-checkbox area
 /**
  * Builds the cytoscape graph. 
  * Used on initialization with the global pid, plen, and pname phrases.
@@ -351,7 +352,13 @@ function buildGraph(){
             //hide the loading icon
         });
 
-
+    //initialize collection
+    if (firstRun === true){
+        console.log("first run")
+        firstRun = false
+        selected_elems = cy.collection()
+    }
+    
     var past_node = null;
     var node_neighbors = null;
     /**
@@ -409,13 +416,29 @@ function buildGraph(){
         past_node = ele;
     }
     
-    var selected_elems = 
+    
+    //console.log(selected_elems)
     /**
      * Displays node info on click
      * Adds element to selected elements if shift key is held down
      */
     cy.$('node').on('click', function(e){
-        
+        if (shifted){
+            //add element to selected elems
+            selected_elems = selected_elems.add(e.target)
+            //update the checkbox to include it
+            //get the <ul> list
+            var ul = document.getElementById("selection-area")     
+            //create <li> element
+            var li = document.createElement('li');
+            //add data to li
+            var ele = e.target;
+            li.innerHTML = ele.data('protein_name') + " " + ele.data('UniProtKB_accession')
+            //append li to ul
+            ul.appendChild(li)
+        }
+        console.log(selected_elems)
+
         displayNodeInfo(e);
     });
     
@@ -439,10 +462,7 @@ function buildGraph(){
     });
 
     //
-    if (firstRun === true){
-        firstRun = false
-        buildGraph()
-    }
+    
 }
 //build graph initially
 buildGraph();

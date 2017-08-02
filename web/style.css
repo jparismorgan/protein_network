@@ -96,3 +96,10 @@ h3 {
   border: 2px solid black;
   width: 95%;
 }
+
+/* Multiple checkbox area */
+ select, ul { height: 100px; overflow: auto; width: 100px; border: 1px solid #000; }
+   ul { list-style-type: none; margin: 0; padding: 0; overflow-x: hidden; }
+   li { margin: 0; padding: 0; }
+   label { display: block; color: WindowText; background-color: Window; margin: 0; padding: 0; width: 100%; }
+   label:hover { background-color: Highlight; color: HighlightText; }
