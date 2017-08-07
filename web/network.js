@@ -262,6 +262,58 @@ function selectElements(pid_cutoff, plen_cutoff){
     return {graph_elems: graph_elems, exclude_elems:exclude_elems};
 };
 
+var past_node = null;
+var node_neighbors = null;
+/**
+ * Displays information about the node clicked on or hovering over
+ */
+function displayNodeInfo(e){
+    var ele = e.target;
+    //Update info box
+    info_text = ""
+    info_text += 'protein_name: ' + ele.data('protein_name') + '<br>'
+    info_text += 'length: ' + ele.data('length') +  '<br>'
+    info_text += 'source_organism: ' + ele.data('source_organism') + '<br>'
+    info_text += 'NCBI_taxonomy: <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=' + ele.data('NCBI_taxonomy') +'" target="_blank">' +ele.data('NCBI_taxonomy')+'</a><br>'
+    info_text += 'num_cluster_members: ' + ele.data('num_cluster_members') + '<br>'
+    info_text += 'UniProtKB accession: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
+    info_text += 'UniProtKB ID: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_ID') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
+    info_text += 'UniRef90: <a href="http://www.uniprot.org/uniref/' + ele.data('id') +'" target="_blank">' +ele.data('id')+'</a><br>'
+    info_text += 'UniParc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'
+    info_text += 'Sequence: <br>' + html_sequence_by_uniprotkbaccession[ele.data('UniProtKB_accession')]
+    
+    
+    //Protein name: " + ele.data('id') + "<br> Num Cluster Members: " + ele.data('num_cluster_members');
+    document.getElementById("info-text").innerHTML = info_text;
+    
+    //Color neighboring nodes red
+    if (node_neighbors){
+    node_neighbors.animate({
+        style: { lineColor: "#A9A9A9"}
+    });}
+    node_neighbors =  ele.connectedEdges()
+    node_neighbors.animate({
+        style: { lineColor: 'red' }
+    });
+
+
+    //Color target node
+    if (past_node && past_node !== ele){
+        past_node.animate({
+            style: {
+            'border-width': 0,
+            }
+        });
+    }
+    ele.animate({
+        style: {
+            'border-width': 10,
+            'border-color': 'red',
+        }
+    })
+    past_node = ele;
+}
+
 var graph_elems     //elems to have in graph layout 
 var exclude_elems   //elems to not have in graph layout
 var firstRun = true //variable to re-run buildGraph() on the first initialization (cytoscape is wierd with it's layout engine)
@@ -355,58 +407,6 @@ function buildGraph(){
         selected_elems = cy.collection()
     }
     
-    var past_node = null;
-    var node_neighbors = null;
-    /**
-     * Displays information about the node clicked on or hovering over
-     */
-    function displayNodeInfo(e){
-        var ele = e.target;
-        //Update info box
-        info_text = ""
-        info_text += 'protein_name: ' + ele.data('protein_name') + '<br>'
-        info_text += 'length: ' + ele.data('length') +  '<br>'
-        info_text += 'source_organism: ' + ele.data('source_organism') + '<br>'
-        info_text += 'NCBI_taxonomy: <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=' + ele.data('NCBI_taxonomy') +'" target="_blank">' +ele.data('NCBI_taxonomy')+'</a><br>'
-        info_text += 'num_cluster_members: ' + ele.data('num_cluster_members') + '<br>'
-        info_text += 'UniProtKB accession: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
-        info_text += 'UniProtKB ID: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_ID') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
-        info_text += 'UniRef90: <a href="http://www.uniprot.org/uniref/' + ele.data('id') +'" target="_blank">' +ele.data('id')+'</a><br>'
-        info_text += 'UniParc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'
-        
-        
-        
-        //Protein name: " + ele.data('id') + "<br> Num Cluster Members: " + ele.data('num_cluster_members');
-        document.getElementById("info-text").innerHTML = info_text;
-        
-        //Color neighboring nodes red
-        if (node_neighbors){
-        node_neighbors.animate({
-            style: { lineColor: "#A9A9A9"}
-        });}
-        node_neighbors =  ele.connectedEdges()
-        node_neighbors.animate({
-            style: { lineColor: 'red' }
-        });
-
-
-        //Color target node
-        if (past_node && past_node !== ele){
-            past_node.animate({
-                style: {
-                'border-width': 0,
-                }
-            });
-        }
-        ele.animate({
-            style: {
-                'border-width': 10,
-                'border-color': 'red',
-            }
-        })
-        past_node = ele;
-    }
-    
     /**
      * Displays node info on click
      * Adds element to selected elements if shift key is held down
@@ -414,6 +414,7 @@ function buildGraph(){
     cy.$("node").on("click", function(e) {
       if (shifted) {
         var ele = e.target;
+        console.log(ele)
         if (!selected_elems.contains(ele)){
             //update the checkbox to include it        
             var prot_name = ele.data("protein_name");
@@ -509,11 +510,17 @@ function exportRepNodes(){
         }
     }
     
-    //
-
-
-    return
-    var strData = "data to write"
+    var strData = ''
+    for (var i = 0; i < download_elems.length; i++){
+        var ele = download_elems[i]
+        var ele_uniprotaccession = ele.data('UniProtKB_accession')
+        var ele_uniref = ele.data('id')
+        console.log(ele_uniprotaccession)
+        console.log(sequence_by_uniprotkbaccession)
+        strData += '>' + ele_uniprotaccession + '|' + ele_uniref + '\n'
+        strData += sequence_by_uniprotkbaccession[ele_uniprotaccession] + '\n'
+        strData += '\n'
+    }
     var strFileName = "filename.txt"
     strMimeType = "text/plain"
     var D = document,
@@ -562,31 +569,15 @@ function exportRepNodes(){
  
  }
 
-
-
-
-
-//EXTRA TO DOWNLOAD FILES
-// var textToWrite = "test text"//document.getElementById("inputTextToSave").value;
-// var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
-// var fileNameToSaveAs = "filename2.txt"//document.getElementById("inputFileNameToSaveAs").value;
-// var downloadLink = document.createElement("a");
-// downloadLink.download = fileNameToSaveAs;
-// downloadLink.innerHTML = "Download File";
-// if (window.webkitURL != null)
-// {
-//     // Chrome allows the link to be clicked
-//     // without actually adding it to the DOM.
-//     downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
-// }
-// else
-// {
-//     // Firefox requires the link to be added to the DOM
-//     // before it can be clicked.
-//     downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
-//     downloadLink.onclick = destroyClickedElement;
-//     downloadLink.style.display = "none";
-//     document.body.appendChild(downloadLink);
-// }
-
-// downloadLink.click();
+// generate a lookup table for the id:sequence data array
+var html_sequence_by_uniprotkbaccession = {};
+var sequence_by_uniprotkbaccession = {};
+uniref_protein_map.forEach(function (el, i, arr) {
+    //clean sequence up
+    html_seq = el.sequence.replace(/(\r\n|\n|\r)/gm,""); //remove line breaks
+    html_seq = html_seq.match(/.{1,30}/g).join("<br/>");      //add in line break every 30 chars
+    //add it to the html formatted dict
+    html_sequence_by_uniprotkbaccession[el.id] = html_seq;
+    //add original to own dict
+    sequence_by_uniprotkbaccession[el.id] = el.sequence
+});

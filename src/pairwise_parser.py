@@ -202,39 +202,18 @@ def createElementsFile(out_filepath):
 	Writes out a a network that is in JSON-esque format that cytoscape.js can read
 	Not true JSON: The keys are not strings.
 	"""
-	#Write the network to a text file for debugging
-	
+	#Write node and edge javascript arrays containing node and edge objects, respectively
 	with open(out_filepath + "elements.js", "w") as elems_outfile:
 		elems_outfile.write('var nodes = [\n')
+		#write the nodes
 		for n in nodes:
 			elems_outfile.write(createRepNode(n))
 		elems_outfile.write(']; \n //End of nodes \n\n')
 		elems_outfile.write('var edges = [\n')
+		#write the edges
 		for e in edges:
 			elems_outfile.write(createEdge(e))
 		elems_outfile.write(']; \n //End of edges \n\n')
-	
-	
-
-	#Write the network straight to network.js to be viewed locally in an html page.
-	#Delete everything in network.js up to the string "\\End of protein elements."
-	#Then write the network to the file.
-	# with open(out_filepath + 'network.js', 'r') as infile, open(out_filepath +'network_temp.js', 'a') as outfile:
-	# 	# Read the file line by line...
-	# 	for line in iter(infile.readline, ''):
-	# 		# until we have a match.
-	# 		if "//End of protein elements" in line:
-	# 			# Read the rest of the input in one go and write it
-	# 			# to the output. If you file is really big you might
-	# 			# run out of memory doing this and have to break it
-	# 			# into chunks.
-	# 			outfile.write(infile.read())
-
-	# 			# Our work here is done, quit the loop.
-	# 			break
-	
-	# if raw_input("Press y after inspecting the temporary network_temp.js file") == 'y':
-	# 	subprocess.call("mv "+out_filepath+"network_temp.js "+out_filepath+"network.js", shell=True)
 	return
 
 def main():

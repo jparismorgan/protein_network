@@ -43,6 +43,11 @@ h3 {
   background-color: beige;
 }
 
+#info-text{
+  height: 100%;
+  overflow: scroll;
+}
+
 #selection-area{
   width: 35%;
   height: 60%;

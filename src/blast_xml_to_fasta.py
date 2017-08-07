@@ -17,6 +17,7 @@ def blast_xml_to_fasta(input_xml_filelocation, output_fasta_filelocation):
 
     #use NCBIXML.parse if multiple results, then use iterator to access each once, or a list to load into memory
     blast_records = list(NCBIXML.parse(result_handle))
+    #Only take the first result. TODO: Check for edge cases here
     blast_record = blast_records[0]
     save_file = open(output_fasta_filelocation, 'w')
     for alignment in blast_record.alignments:
