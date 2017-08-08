@@ -1,10 +1,14 @@
+"""
+Module docstring
+"""
 from Tkinter import Tk, Label, Button, BOTTOM, Frame, Text, RIDGE, END
 import tkFileDialog
 import re
 import main
 import time
+import webbrowser
 
-WIDTH = 600
+WIDTH = 650
 HEIGHT = 500
 
 class UserInterface:
@@ -76,7 +80,9 @@ class UserInterface:
         self.info_label.config(text = message)
     def writeToStatusBox(self, message):
         self.status_label.config(text = message)
-
+    def openHTML(self, event, text):
+        webbrowser.open_new(text)
+        
     def getHomeDirectoryPath(self):
         """
         Gets the path to the maindb.db directory. Sets it as a variable of user_interface.
@@ -143,7 +149,14 @@ class UserInterface:
             self.writeToStatusBox(organize_network_ref_dict['message'] + "\n Ending program. Please try again")
             print organize_network_ref_dict['exception']
             return
-        self.writeToStatusBox(organize_network_ref_dict['message'] + "\n All done! Put link below into Chrome: \n " + self.save_folder+'network_'+self.query_protein_sequence_name+'.html' )
+        
+        #User instructions
+        self.writeToStatusBox(organize_network_ref_dict['message'] + "\n All done! Click the link below to oepn. Copy file into Chrome if not default.")
+
+        # Write link to GUI so user can open html file
+        self.link = Label(self.master, text=self.save_folder+'network_'+self.query_protein_sequence_name+'.html', fg="blue", cursor="hand2")
+        self.link.bind("<1>", lambda event, text=self.save_folder+'network_'+self.query_protein_sequence_name+'.html': self.openHTML(event, text))
+        self.link.pack()
 
     def checkStartAnalysis(self):
         """

@@ -25,16 +25,13 @@ var params = {      //parameters for the layout
 
 var mcl_options = { //options for the MCL algorithm
     expandFactor: 2,        // affects time of computation and cluster granularity to some extent: M * M
-    inflateFactor: 2,       // affects cluster granularity (the greater the value, the more clusters): M(i,j) / E(j)
+    inflateFactor: 3,       // affects cluster granularity (the greater the value, the more clusters): M(i,j) / E(j)
     multFactor: 1,          // optional self loops for each node. Use a neutral value to improve cluster computations.
-    maxIterations: 50,      // maximum number of iterations of the MCL algorithm in a single run
+    maxIterations: 100,      // maximum number of iterations of the MCL algorithm in a single run
     attributes: [           // attributes/features used to group nodes, ie. similarity values between nodes
         function(edge) {
             return edge.data('weight');
         },
-        function(edge) {
-            return edge.data('percent_id');
-        }
      ]
 };
 
@@ -280,6 +277,7 @@ function displayNodeInfo(e){
     info_text += 'UniProtKB ID: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_ID') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
     info_text += 'UniRef90: <a href="http://www.uniprot.org/uniref/' + ele.data('id') +'" target="_blank">' +ele.data('id')+'</a><br>'
     info_text += 'UniParc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'
+    console.log(ele.data('UniProtKB_accession'))
     info_text += 'Sequence: <br>' + html_sequence_by_uniprotkbaccession[ele.data('UniProtKB_accession')]
     
     
@@ -572,12 +570,15 @@ function exportRepNodes(){
 // generate a lookup table for the id:sequence data array
 var html_sequence_by_uniprotkbaccession = {};
 var sequence_by_uniprotkbaccession = {};
-uniref_protein_map.forEach(function (el, i, arr) {
-    //clean sequence up
-    html_seq = el.sequence.replace(/(\r\n|\n|\r)/gm,""); //remove line breaks
-    html_seq = html_seq.match(/.{1,30}/g).join("<br/>");      //add in line break every 30 chars
-    //add it to the html formatted dict
-    html_sequence_by_uniprotkbaccession[el.id] = html_seq;
-    //add original to own dict
-    sequence_by_uniprotkbaccession[el.id] = el.sequence
-});
+window.onload = function(e){ 
+    uniref_protein_map.forEach(function (el, i, arr) {
+        //clean sequence up
+        html_seq = el.sequence.replace(/(\r\n|\n|\r)/gm,""); //remove line breaks
+        html_seq = html_seq.match(/.{1,30}/g).join("<br/>");      //add in line break every 30 chars
+        console.log(el.id)
+        //add it to the html formatted dict
+        html_sequence_by_uniprotkbaccession[el.id] = html_seq;
+        //add original to own dict
+        sequence_by_uniprotkbaccession[el.id] = el.sequence
+    });
+}
