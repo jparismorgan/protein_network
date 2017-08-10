@@ -68,8 +68,7 @@
     <br>
     <button type="button" onclick="clearSelected()">Clear Selected</button>
     <br>
-    <button type="button" onclick="exportRepNodes()">Export Representative Nodes Fasta</button>
-    <button type="button" onclick="exportClusterAndRepNodes()">Export Cluster + Rep Nodes Fasta</button>
+    <button type="button" onclick="exportRepNodes()">Export Selected Nodes</button>
     <ul>
         <!-- This is where selected nodes go-->
     </ul>
@@ -78,6 +77,7 @@
 </div>
 <!-- Load appplication code at the end to ensure DOM is loaded -->
 <script src = "elements.js"></script>
+<script src = "match_protein.js"></script>
 <script src = "../../web/network.js"></script>
 <script src = "fasta_js_map.js"></script>
 <script>

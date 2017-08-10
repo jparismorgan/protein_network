@@ -3,13 +3,13 @@ Takes in a fasta file and creates a javascript variable containing protein acces
 """
 
 
-def convertFastaToJs(filepath, db_name, protein):
+def convertFastaToJs(save_folder_protein, save_folder):
     """
     Takes in a fasta file and creates a javascript variable containing protein accession number --> protein sequence objects
     The accession number is based on however the fasta file is formatted
     I.e. >P22869|UniRef90_P22869 --> P22869 is the accession number
     """
-    with open(filepath + db_name + "_" + protein + ".fasta", "r") as fasta_file, open(filepath + "fasta_js_map.js", "w") as js_file:
+    with open(save_folder_protein + ".fasta", "r") as fasta_file, open(save_folder + "fasta_js_map.js", "w") as js_file:
         id = ""
         seq = ""
         js_file.write('var uniref_protein_map = [\n')
@@ -25,11 +25,9 @@ def convertFastaToJs(filepath, db_name, protein):
 
 
 def main():
-    filepath = "/Users/parismorgan/Desktop/iMicrobes/network_builder/files/31Jul17_mmox_01/"
-    db_name = "uniref90"
-    protein = "mmox"
-    convertFastaToJs(filepath, db_name, protein)
-
+    save_folder_protein = "/Users/parismorgan/Desktop/iMicrobes/network_builder/files/31Jul17_mmox_01/mmox"
+    save_folder = "/Users/parismorgan/Desktop/iMicrobes/network_builder/files/31Jul17_mmox_01/"
+    convertFastaToJs(save_folder_protein, save_folder)
 
 if __name__ == '__main__':
     main()

@@ -9,6 +9,7 @@ import requests
 # list of nodes and edges
 nodes = []
 edges = {}
+match_protein = None
 
 
 class Edge:
@@ -49,7 +50,7 @@ class RepNode:
         self.cluster_members = cluster_members
 
 
-def uniprotAPICall(protein_name):
+def unirefAPICall(protein_name):
     """
     Calls the UniRef database with the protein name.
     If no response, it is no longer the cluster representative 
@@ -125,10 +126,63 @@ def uniprotAPICall(protein_name):
         c_node = ClustNode(member_dict)
         cluster_members.append(c_node)
 
+
     n.cluster_members = cluster_members
     n.num_cluster_members = len(cluster_members)
     return n
 
+def uniprotAPICall(protein_name):
+    """
+    Calls the UniProt database with the protein name.
+    If no response, the protein is invalid and skip it
+    Parse the information about the member
+    Return a node with information about the protein
+    """
+    # API call to UniRef DB
+    base_url = "http://www.uniprot.org/uniprot/"
+    extension = ".xml"
+    my_response = requests.get(base_url + protein_name + extension)
+    
+    # For successful API call, response code will be 200 (OK)
+    if not my_response.ok:
+        print protein_name
+        return
+
+    # get root of the XML response
+    root = ET.fromstring(my_response.content)
+    rep_member = root.find('{http://uniprot.org/uniprot}entry')
+
+    # set up dict to put in info
+    member_dict = {}
+
+    # Add any properties that have type - id pairings
+    for prop in rep_member.iter():
+        if 'type' in prop.attrib and 'id' in prop.attrib:
+            member_dict[prop.attrib['type'].replace(" ", "_")] = prop.attrib['id']
+        # else:
+        #     member_dict[prop.attrib['type'].replace(
+        #         " ", "_")] = prop.attrib['id']
+    
+    # Get protein accession. Ex: Q8KM74
+    member_dict['UniProtKB_accession'] = rep_member.find('{http://uniprot.org/uniprot}accession').text
+    member_dict['id'] = member_dict['UniProtKB_accession']
+
+    # Get specific protein accession. Ex: Q8KM74_METTR
+    member_dict['UniProtKB_ID'] =  rep_member.find('{http://uniprot.org/uniprot}name').text
+
+    # Get source organism
+    member_dict['source_organism'] =  rep_member.find('{http://uniprot.org/uniprot}organism').find('{http://uniprot.org/uniprot}name').text
+
+    # Get protein existance: http://www.uniprot.org/help/protein_existence
+    member_dict['protein_existence'] =  rep_member.find('{http://uniprot.org/uniprot}proteinExistence').attrib['type'] if 'type' in rep_member.find('{http://uniprot.org/uniprot}proteinExistence').attrib else None
+    
+    # Get protein length
+    member_dict['length'] =  int(rep_member.find('{http://uniprot.org/uniprot}sequence').attrib['length']) if 'length' in   rep_member.find('{http://uniprot.org/uniprot}sequence').attrib else None
+
+    #print member_dict
+    #name = UniProtKB_accession, UniProtKB_ID (has the _1343),  UniProtKB_accession, id =  UniProtKB_ID, length, protein_name, source_organism, NCBI_taxonomy, UniParc_ID, Pfam,Supfam
+
+    return ClustNode(member_dict)
 
 def parseAllVsAllBlast(blast_allvsall_filepath):
     """"
@@ -152,6 +206,8 @@ def parseAllVsAllBlast(blast_allvsall_filepath):
     #     '/Users/parismorgan/Desktop/iMicrobes/network_builder/files/das1/histogram_score.txt', 'w')
 
 
+    uniref = False      #is the all vs all a Uniref format
+
     query = None
     hit = None
     percent_id = None
@@ -165,12 +221,24 @@ def parseAllVsAllBlast(blast_allvsall_filepath):
         line = line.strip()
         if re.search('Query=', line):
             query = line.split('|')[-1]
-            # Call the uniprot API to add information to node, then add to node list
-            n = uniprotAPICall(query)
+
+            if re.search('UniRef', query):
+                uniref = True 
+            
+            if uniref:
+                # Call the uniref API to add information to node, then add to node list
+                n = unirefAPICall(query)
+            else:
+                #Call the uniprot API to add information to node, then add node to list
+                n = uniprotAPICall(line.split('|')[1])
+                
             nodes.append(n)
 
         elif re.search('>', line):
-            hit = line.split("|")[-1]
+            if uniref:
+                hit = line.split("|")[-1]
+            else:
+                hit = line.split('|')[1]
 
         elif re.search('Length=', line):
             align_len = line.split('=')[-1]
@@ -254,6 +322,7 @@ def createElementsFile(out_filepath):
         for e in edge_objects:
             elems_outfile.write(createEdge(e))
         elems_outfile.write(']; \n //End of edges \n\n')
+
     return
 
 def main():
@@ -262,10 +331,10 @@ def main():
     Creates Node and Edge objects
     Creates an XGMML file for viewing with cytoscape
     """
-    parseAllVsAllBlast(
-        "/Users/parismorgan/Desktop/iMicrobes/network_builder/files/pairwisetest/uniref90_mmox_allvall")
-    createElementsFile(
-        "/Users/parismorgan/Desktop/iMicrobes/network_builder/files/pairwisetest/")
+    f = "/Users/parismorgan/Desktop/iMicrobes/network_builder/files/08Aug17_mmox_02_analysis_06_analysis_01/analysis_temp_allvall"
+    parseAllVsAllBlast(f)
+    #createElementsFile(
+     #   "/Users/parismorgan/Desktop/iMicrobes/network_builder/files/pairwisetest/")
 
 
 if __name__ == '__main__':

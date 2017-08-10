@@ -143,9 +143,14 @@ def allVsAll(diamond_exec, save_folder_protein):
     ret_dict['message'] = "Successfull all-versus-all blastp search."
     return ret_dict
 
-def organizeNetwork(home_filepath, db_name, protein, diamond_exec, save_folder, save_folder_protein):
+def organizeNetwork(home_filepath, protein, save_folder, save_folder_protein):
     ret_dict = {'status': None, 'message':None, 'exception':None, 'save_folder_protein':None}
-    
+    print 'XXXX \n'
+    print home_filepath
+    print protein
+    print save_folder
+    print save_folder_protein
+    print '\n XXXX \n'
     # Can now call pairwise_parser.py to parse the all versus all result and create the network.js file of edges and nodes
     try:
         print "Parse the all vs all result and create the graph"
@@ -160,7 +165,7 @@ def organizeNetwork(home_filepath, db_name, protein, diamond_exec, save_folder, 
     # Create javascript variable containing objects of nodes to protein sequences
     try:
         print "Create protein accession number to protein sequence objects for use in visualization."
-        convertFastaToJs.convertFastaToJs(save_folder, db_name, protein)
+        convertFastaToJs.convertFastaToJs(save_folder_protein, save_folder)
         pairwise_parser.createElementsFile(save_folder)
     except Exception as e:
         ret_dict['status'] = False

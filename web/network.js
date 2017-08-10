@@ -277,7 +277,6 @@ function displayNodeInfo(e){
     info_text += 'UniProtKB ID: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_ID') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
     info_text += 'UniRef90: <a href="http://www.uniprot.org/uniref/' + ele.data('id') +'" target="_blank">' +ele.data('id')+'</a><br>'
     info_text += 'UniParc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'
-    console.log(ele.data('UniProtKB_accession'))
     info_text += 'Sequence: <br>' + html_sequence_by_uniprotkbaccession[ele.data('UniProtKB_accession')]
     
     
@@ -389,15 +388,15 @@ function buildGraph(){
 
     //when cy is loaded
     cy.ready(function(event){
-            //add in nodes and edges that didn't meet cutoff
-            cy.add(exclude_elems);
-            //update labels
-            updatePidLabel(pid_cutoff);
-            updatePlenLabel(plen_cutoff);
-            //update the graph cutoff (just in case, but does catch some wierd edge cases)
-            updateCutoff();
-            //hide the loading icon
-        });
+        //add in nodes and edges that didn't meet cutoff
+        cy.add(exclude_elems);
+        //update labels
+        updatePidLabel(pid_cutoff);
+        updatePlenLabel(plen_cutoff);
+        //update the graph cutoff (just in case, but does catch some wierd edge cases)
+        updateCutoff();
+        //hide the loading icon
+    });
 
     //initialize collection
     if (firstRun === true){
@@ -405,6 +404,13 @@ function buildGraph(){
         selected_elems = cy.collection()
     }
     
+    //set style on the match_protein
+    //TODO
+    var match_protein_cy = cy.$('#'+match_protein.id)
+    match_protein_cy.style({
+        'shape':'star'
+    })
+
     /**
      * Displays node info on click
      * Adds element to selected elements if shift key is held down
@@ -517,7 +523,6 @@ function exportRepNodes(){
         console.log(sequence_by_uniprotkbaccession)
         strData += '>' + ele_uniprotaccession + '|' + ele_uniref + '\n'
         strData += sequence_by_uniprotkbaccession[ele_uniprotaccession] + '\n'
-        strData += '\n'
     }
     var strFileName = "filename.txt"
     strMimeType = "text/plain"
@@ -560,17 +565,14 @@ function exportRepNodes(){
     return true;
 }
 
-/**
- * 
- */
- function exportClusterAndRepNodes(){
- 
- }
 
-// generate a lookup table for the id:sequence data array
 var html_sequence_by_uniprotkbaccession = {};
 var sequence_by_uniprotkbaccession = {};
 window.onload = function(e){ 
+    
+    /**
+     * generate a lookup table for the id:sequence data array
+     */
     uniref_protein_map.forEach(function (el, i, arr) {
         //clean sequence up
         html_seq = el.sequence.replace(/(\r\n|\n|\r)/gm,""); //remove line breaks
@@ -581,4 +583,5 @@ window.onload = function(e){
         //add original to own dict
         sequence_by_uniprotkbaccession[el.id] = el.sequence
     });
+
 }
