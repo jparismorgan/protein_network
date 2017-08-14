@@ -1,3 +1,10 @@
+/**
+ * Network visualizer tool
+ * ----------------------------------------------------------------
+ * Industrial Microbes C 2017 All Rights Reserved
+ * Contact: J Paris Morgan (jparismorgan@gmail.com) or Derek Greenfield (derek@imicrobes.com)
+ */
+
 var cy;             //graph object
 var layout;         //layout object
 var pid = 85;       //edge percent identity cutoff
@@ -5,23 +12,16 @@ var plen = 180;     //node protein length cutoff
 var pname = "";     //node name substring phrase
 var pnot = "";      //node name substring exclusion phrase
 
-var params = {      //parameters for the layout
-        name: 'cola',
-        pixelRatio: 1, //performance optimization
-        hideEdgesOnViewport: true, //performance
-        textureOnViewport: true, //performance optimization
-        maxSimulationTime: 2000,
-        //nodeSpacing: 1,// function( node ){ return 1;  },
-        randomize: false,
-        // edgeLength: function( edge ){
-        //     var len = parseInt(edge.data('weight')); 
-        //     return 1 / (1000*len) ; 
-        // },
-        handleDisconnected: true,
-        avoidOverlap: true,
-        infinite:false,
-    };
 
+var shifted = null  //bool; true if the shift key is held down
+$(document).on('keyup keydown', function(e){
+    shifted = e.shiftKey
+} );
+
+
+////////////////////////////////////////////////////////////////
+///// Function to run the MCL algorithm
+////////////////////////////////////////////////////////////////
 
 var mcl_options = { //options for the MCL algorithm
     expandFactor: 2,        // affects time of computation and cluster granularity to some extent: M * M
@@ -35,31 +35,36 @@ var mcl_options = { //options for the MCL algorithm
      ]
 };
 
+
 /**
  * Runs the Markov Cluster Agorithm on the cy graph
  * @returns {object} returns array of Collections, each being a single cluster
  * Assigns colors to all nodes in clusters
  */
 function mcl(){
+    colors =["#000000","#FFFF00","#1CE6FF","#FF34FF","#FF4A46","#008941","#006FA6","#A30059","#FFDBE5","#7A4900","#0000A6","#63FFAC","#B79762","#004D43","#8FB0FF","#997D87","#5A0007","#809693","#FEFFE6","#1B4400","#4FC601","#3B5DFF","#4A3B53","#FF2F80","#61615A","#BA0900","#6B7900","#00C2A0","#FFAA92","#FF90C9","#B903AA","#D16100","#DDEFFF","#000035","#7B4F4B","#A1C299","#300018","#0AA6D8","#013349","#00846F","#372101","#FFB500","#C2FFED","#A079BF","#CC0744","#C0B9B2","#C2FF99","#001E09","#00489C","#6F0062","#0CBD66","#EEC3FF","#456D75","#B77B68","#7A87A1","#788D66","#885578","#FAD09F","#FF8A9A","#D157A0","#BEC459","#456648","#0086ED","#886F4C","#34362D","#B4A8BD","#00A6AA","#452C2C","#636375","#A3C8C9","#FF913F","#938A81","#575329","#00FECF","#B05B6F","#8CD0FF","#3B9700","#04F757","#C8A1A1","#1E6E00","#7900D7","#A77500","#6367A9","#A05837","#6B002C","#772600","#D790FF","#9B9700","#549E79","#FFF69F","#201625","#72418F","#BC23FF","#99ADC0","#3A2465","#922329","#5B4534","#FDE8DC","#404E55","#0089A3","#CB7E98","#A4E804","#324E72","#6A3A4C","#83AB58","#001C1E","#D1F7CE","#004B28","#C8D0F6","#A3A489","#806C66","#222800","#BF5650","#E83000","#66796D","#DA007C","#FF1A59","#8ADBB4","#1E0200","#5B4E51","#C895C5","#320033","#FF6832","#66E1D3","#CFCDAC","#D0AC94","#7ED379","#012C58","#7A7BFF","#D68E01","#353339","#78AFA1","#FEB2C6","#75797C","#837393","#943A4D","#B5F4FF","#D2DCD5","#9556BD","#6A714A","#001325","#02525F","#0AA3F7","#E98176","#DBD5DD","#5EBCD1","#3D4F44","#7E6405","#02684E","#962B75","#8D8546","#9695C5","#E773CE","#D86A78","#3E89BE","#CA834E","#518A87","#5B113C","#55813B","#E704C4","#00005F","#A97399","#4B8160","#59738A","#FF5DA7","#F7C9BF","#643127","#513A01","#6B94AA","#51A058","#A45B02","#1D1702","#E20027","#E7AB63","#4C6001","#9C6966","#64547B","#97979E","#006A66","#391406","#F4D749","#0045D2","#006C31","#DDB6D0","#7C6571","#9FB2A4","#00D891","#15A08A","#BC65E9","#FFFFFE","#C6DC99","#203B3C","#671190","#6B3A64","#F5E1FF","#FFA0F2","#CCAA35","#374527","#8BB400","#797868","#C6005A","#3B000A","#C86240","#29607C","#402334","#7D5A44","#CCB87C","#B88183","#AA5199","#B5D6C3","#A38469","#9F94F0","#A74571","#B894A6","#71BB8C","#00B433","#789EC9","#6D80BA","#953F00","#5EFF03","#E4FFFC","#1BE177","#BCB1E5","#76912F","#003109","#0060CD","#D20096","#895563","#29201D","#5B3213","#A76F42","#89412E","#1A3A2A","#494B5A","#A88C85","#F4ABAA","#A3F3AB","#00C6C8","#EA8B66","#958A9F","#BDC9D2","#9FA064","#BE4700","#658188","#83A485","#453C23","#47675D","#3A3F00","#061203","#DFFB71","#868E7E","#98D058","#6C8F7D","#D7BFC2","#3C3E6E","#D83D66","#2F5D9B","#6C5E46","#D25B88","#5B656C","#00B57F","#545C46","#866097","#365D25","#252F99","#00CCFF","#674E60","#FC009C","#92896B"]
+    
     // Run Markov cluster on graph
     var clusters = cy.elements().markovCluster( mcl_options );
-    colors = ["#79383d","#6eb94a","#c50e1f","#8ef3b7","#4afaec","#f4e960","#83a9b9","#2183de","#9867c","#d8a025","#6db694","#444b90","#41f48a","#12e6de","#fbfc7d","#342102","#20ecbe","#d12ff8","#c70ae6","#5c48de","#e503ea","#20009e","#c6b908","#675558","#d1f426","#5bf727","#f9acf1","#1b1510","#6c293","#1d9051","#8bfb6e","#812bb1","#b2f901","#b45eb4","#551ca4","#68eefe","#39dee6","#616a70","#ae6da6","#e57f12","#5fd922","#d0037a","#7e05cd","#2ee926","#5426d9","#f15f92","#4ebd29","#ea2d1b","#4f35e1","#670ba7","#9aa076","#6596ce","#1625b0","#982f0","#9f27c","#e09128","#fd058e","#36fcbf","#346283","#8b705e","#5f477f","#a3a887","#17e8","#834747","#f25ed3","#5daca3","#f707a1",]
-    colors2 =["#000000","#FFFF00","#1CE6FF","#FF34FF","#FF4A46","#008941","#006FA6","#A30059","#FFDBE5","#7A4900","#0000A6","#63FFAC","#B79762","#004D43","#8FB0FF","#997D87","#5A0007","#809693","#FEFFE6","#1B4400","#4FC601","#3B5DFF","#4A3B53","#FF2F80","#61615A","#BA0900","#6B7900","#00C2A0","#FFAA92","#FF90C9","#B903AA","#D16100","#DDEFFF","#000035","#7B4F4B","#A1C299","#300018","#0AA6D8","#013349","#00846F","#372101","#FFB500","#C2FFED","#A079BF","#CC0744","#C0B9B2","#C2FF99","#001E09","#00489C","#6F0062","#0CBD66","#EEC3FF","#456D75","#B77B68","#7A87A1","#788D66","#885578","#FAD09F","#FF8A9A","#D157A0","#BEC459","#456648","#0086ED","#886F4C","#34362D","#B4A8BD","#00A6AA","#452C2C","#636375","#A3C8C9","#FF913F","#938A81","#575329","#00FECF","#B05B6F","#8CD0FF","#3B9700","#04F757","#C8A1A1","#1E6E00","#7900D7","#A77500","#6367A9","#A05837","#6B002C","#772600","#D790FF","#9B9700","#549E79","#FFF69F","#201625","#72418F","#BC23FF","#99ADC0","#3A2465","#922329","#5B4534","#FDE8DC","#404E55","#0089A3","#CB7E98","#A4E804","#324E72","#6A3A4C","#83AB58","#001C1E","#D1F7CE","#004B28","#C8D0F6","#A3A489","#806C66","#222800","#BF5650","#E83000","#66796D","#DA007C","#FF1A59","#8ADBB4","#1E0200","#5B4E51","#C895C5","#320033","#FF6832","#66E1D3","#CFCDAC","#D0AC94","#7ED379","#012C58","#7A7BFF","#D68E01","#353339","#78AFA1","#FEB2C6","#75797C","#837393","#943A4D","#B5F4FF","#D2DCD5","#9556BD","#6A714A","#001325","#02525F","#0AA3F7","#E98176","#DBD5DD","#5EBCD1","#3D4F44","#7E6405","#02684E","#962B75","#8D8546","#9695C5","#E773CE","#D86A78","#3E89BE","#CA834E","#518A87","#5B113C","#55813B","#E704C4","#00005F","#A97399","#4B8160","#59738A","#FF5DA7","#F7C9BF","#643127","#513A01","#6B94AA","#51A058","#A45B02","#1D1702","#E20027","#E7AB63","#4C6001","#9C6966","#64547B","#97979E","#006A66","#391406","#F4D749","#0045D2","#006C31","#DDB6D0","#7C6571","#9FB2A4","#00D891","#15A08A","#BC65E9","#FFFFFE","#C6DC99","#203B3C","#671190","#6B3A64","#F5E1FF","#FFA0F2","#CCAA35","#374527","#8BB400","#797868","#C6005A","#3B000A","#C86240","#29607C","#402334","#7D5A44","#CCB87C","#B88183","#AA5199","#B5D6C3","#A38469","#9F94F0","#A74571","#B894A6","#71BB8C","#00B433","#789EC9","#6D80BA","#953F00","#5EFF03","#E4FFFC","#1BE177","#BCB1E5","#76912F","#003109","#0060CD","#D20096","#895563","#29201D","#5B3213","#A76F42","#89412E","#1A3A2A","#494B5A","#A88C85","#F4ABAA","#A3F3AB","#00C6C8","#EA8B66","#958A9F","#BDC9D2","#9FA064","#BE4700","#658188","#83A485","#453C23","#47675D","#3A3F00","#061203","#DFFB71","#868E7E","#98D058","#6C8F7D","#D7BFC2","#3C3E6E","#D83D66","#2F5D9B","#6C5E46","#D25B88","#5B656C","#00B57F","#545C46","#866097","#365D25","#252F99","#00CCFF","#674E60","#FC009C","#92896B"]
 
-    //colors = []
-    // Assign random colors to each cluster!
+    // Assign colors to each cluster
     for (var c = 0; c < clusters.length; c++) {        
-        if (colors2.length !== 0){
-            clusters[c].style( 'background-color', colors2.shift());    
+        if (colors.length !== 0){
+            // If still enough colors in array
+            clusters[c].style( 'background-color', colors.shift());    
         }
         else{
+            // Assign random color
             color = '#' + Math.floor(Math.random()*16777215).toString(16);
             clusters[c].style( 'background-color', color );
-            //colors.push(color);
         }
     }
     return clusters
 };
+
+////////////////////////////////////////////////////////////////
+///// Functions to update the cutoffs and element selection
+////////////////////////////////////////////////////////////////
 
 var removed_elems;
 /**
@@ -96,6 +101,9 @@ function selectElemsFromCy(search_term, search_field, exclude_bool){
     
     //check for an 'and' command, specified with an '&'
     search_term_list = search_term.split('&');
+    if (exclude_bool && search_term_list.length === 1){
+        search_term_list = search_term.split(' ');
+    }
     if (search_term_list.length > 1){
         //for each of multiple search terms
         for (var n in search_term_list){
@@ -199,11 +207,11 @@ function updateCutoff(){
  * Updates the text of the pid-label in network.html
  */
 function updatePidLabel(pid_cutoff){
-
-    document.getElementById("pid-label").innerHTML = pid_cutoff;
-    document.getElementById("pid").value = pid_cutoff; 
+    
+        document.getElementById("pid-label").innerHTML = pid_cutoff;
+        document.getElementById("pid").value = pid_cutoff;     
 }
-
+    
 /**
  * @param {*} plen_cutoff - protein length cutoff text
  * Updates the text of the plen-label in network.html
@@ -212,6 +220,11 @@ function updatePlenLabel(plen_cutoff){
     document.getElementById("plen-label").innerHTML = plen_cutoff;
     document.getElementById("plen").value = plen_cutoff
 }
+
+
+////////////////////////////////////////////////////////////////
+///// Functions to build the graph
+////////////////////////////////////////////////////////////////
 
 /** 
  * @param {int} pid_cutoff - percent id cutoff
@@ -267,22 +280,72 @@ var node_neighbors = null;
 function displayNodeInfo(e){
     var ele = e.target;
     //Update info box
-    info_text = ""
-    info_text += 'protein_name: ' + ele.data('protein_name') + '<br>'
-    info_text += 'length: ' + ele.data('length') +  '<br>'
-    info_text += 'source_organism: ' + ele.data('source_organism') + '<br>'
-    info_text += 'NCBI_taxonomy: <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=' + ele.data('NCBI_taxonomy') +'" target="_blank">' +ele.data('NCBI_taxonomy')+'</a><br>'
-    info_text += 'num_cluster_members: ' + ele.data('num_cluster_members') + '<br>'
-    info_text += 'UniProtKB accession: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
-    info_text += 'UniProtKB ID: <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_ID') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'
-    info_text += 'UniRef90: <a href="http://www.uniprot.org/uniref/' + ele.data('id') +'" target="_blank">' +ele.data('id')+'</a><br>'
-    info_text += 'UniParc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'
-    info_text += 'Sequence: <br>' + html_sequence_by_uniprotkbaccession[ele.data('UniProtKB_accession')]
+
+    var info_text_array = [];    
+    for (attr in ele.data()){
+        if (attr === 'cluster_members' || attr === 'id' || attr == 'isSeed' || attr === "HOGENOM" || attr === "DOI"){ 
+            continue
+        } else if (attr === 'NCBI_taxonomy' || attr === 'NCBI_taxonomy_id' || attr === 'NCBI_Taxonomy'){
+            if (attr === 'NCBI_taxonomy') info_text_array.push(('NCBI taxonomy: <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=' + ele.data('NCBI_taxonomy') +'" target="_blank">' +ele.data('NCBI_taxonomy')+'</a><br>'))
+                if (attr === 'NCBI_Taxonomy') info_text_array.push(('NCBI taxonomy: <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=' + ele.data('NCBI_Taxonomy') +'" target="_blank">' +ele.data('NCBI_Taxonomy')+'</a><br>'))
+            if (attr === 'NCBI_taxonomy_id') info_text_array.push(('NCBI taxonomy: <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=' + ele.data('NCBI_taxonomy_id') +'" target="_blank">' +ele.data('NCBI_taxonomy_id')+'</a><br>'    ))
+        } else if (attr === 'UniProtKB_accession' || attr === 'UniProtKB_ID') {
+            if (attr === 'UniProtKB_accession') info_text_array.push(('UniProtKB : <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_accession') +'" target="_blank">' +ele.data('UniProtKB_accession')+'</a><br>'))
+            if (attr === 'UniProtKB_ID') info_text_array.push(('UniProtKB : <a href="http://www.uniprot.org/uniprot/' + ele.data('UniProtKB_ID') +'" target="_blank">' +ele.data('UniProtKB_ID')+'</a><br>'))
+        } else if (attr === 'UniRef50_ID'){
+            info_text_array.push(('UniRef50: <a href="http://www.uniprot.org/uniref/' + ele.data('UniRef50_ID') +'" target="_blank">' +ele.data('UniRef50_ID')+'</a><br>'))
+        } else if (attr === 'UniRef90_ID'){
+            info_text_array.push(('UniRef90: <a href="http://www.uniprot.org/uniref/' + ele.data('UniRef90_ID') +'" target="_blank">' +ele.data('UniRef90_ID')+'</a><br>'))
+        } else if (attr === 'UniRef100_ID'){
+            info_text_array.push(('UniRef100: <a href="http://www.uniprot.org/uniref/' + ele.data('UniRef100_ID') +'" target="_blank">' +ele.data('UniRef100_ID')+'</a><br>'))
+        } else if (attr === 'UniParc_ID'){
+            info_text_array.push(('UniParc: <a href="http://www.uniprot.org/uniparc/' + ele.data('UniParc_ID') +'" target="_blank">' +ele.data('UniParc_ID')+'</a><br>'))
+        } else if( attr === 'Pfam'){
+            info_text_array.push(('Pfam: <a href="http://pfam.xfam.org/family/' + ele.data('Pfam') +'" target="_blank">' +ele.data('Pfam')+'</a><br>'))
+        } else if( attr === 'InterPro'){
+            info_text_array.push(('InterPro: <a href="http://www.ebi.ac.uk/interpro/entry/' + ele.data('InterPro') +'" target="_blank">' +ele.data('InterPro')+'</a><br>'))
+        } else if( attr === 'EMBL'){
+            info_text_array.push(('EMBL: <a href="http://www.ebi.ac.uk/ena/data/view/' + ele.data('EMBL') +'" target="_blank">' +ele.data('EMBL')+'</a><br>'))
+        } else if( attr === 'EnsemblBacteria'){
+            info_text_array.push(('EnsemblBacteria: <a href="http://bacteria.ensembl.org/Multi/Search/Results?species=all;idx=;q=' + ele.data('EnsemblBacteria') +'" target="_blank">' +ele.data('EnsemblBacteria')+'</a><br>'))
+        } else if( attr === 'RefSeq'){
+            info_text_array.push(('RefSeq: <a href="https://www.ncbi.nlm.nih.gov/gquery/?term=' + ele.data('RefSeq') +'" target="_blank">' +ele.data('RefSeq')+'</a><br>'))
+        } else if( attr === 'PubMed'){
+            info_text_array.push(('PubMed: <a href="https://www.ncbi.nlm.nih.gov/pubmed/?term=' + ele.data('PubMed') +'" target="_blank">' +ele.data('PubMed')+'</a><br>'))
+        } else if( attr === 'ProteinModelPortal'){
+            info_text_array.push(('ProteinModelPortal: <a href="http://www.proteinmodelportal.org/query/up/' + ele.data('ProteinModelPortal') +'" target="_blank">' +ele.data('ProteinModelPortal')+'</a><br>'))
+        } else if( attr === 'Proteomes'){
+            info_text_array.push(('Proteomes: <a href="http://www.uniprot.org/proteomes/' + ele.data('Proteomes') +'" target="_blank">' +ele.data('Proteomes')+'</a><br>'))
+        } else if( attr === 'PATRIC'){
+            info_text_array.push(('PATRIC: <a href="https://www.patricbrc.org/search/?keyword(&#34;'+ele.data('PATRIC')+'&#34;)" target="_blank">' +ele.data('PATRIC')+'</a><br>'))
+        } else if( attr === 'OrthoDB'){
+            info_text_array.push(('OrthoDB: <a href="http://www.orthodb.org/?query=' + ele.data('OrthoDB') +'" target="_blank">' +ele.data('OrthoDB')+'</a><br>'))
+        } else if( attr === 'STRING'){
+            info_text_array.push(('STRING: <a href="https://string-db.org/" target="_blank"> Go here and enter: </a>   ' + ele.data('STRING') +'<br>'))
+        } else if( attr === 'eggNOG'){
+            info_text_array.push(('eggNOG: <a href="http://eggnogdb.embl.de/#/app/guided_search" target="_blank"> Go here and enter: </a>   ' + ele.data('eggNOG') +'<br>'))
+        } else if( attr === 'SUPFAM'){
+            info_text_array.push(('SUPFAM: <a href="http://supfam.org/SUPERFAMILY/" target="_blank"> Go here and enter: </a>   ' + ele.data('SUPFAM') +'<br>'))
+        }
+        else{
+            info_text_array.push((attr + ': ' + ele.data(attr) + '<br>'))
+        }
+
+        info_text_array.sort()
+    info_text = info_text_array.join(" ")
+    }
+    if (ele.data('UniProtKB_accession') !== undefined){
+        info_text += 'Sequence: <br>' + html_sequence_by_uniprotkbaccession[ele.data('UniProtKB_accession')]
+    } else if (ele.data('UniRef90_ID') !== undefined){
+        var sequence_accession = ele.data('UniRef90_ID').split("_")
+        info_text += 'Sequence: <br>' + html_sequence_by_uniprotkbaccession[sequence_accession[1]]
+    } else{
+        info_text += 'Sequence: <br> Unknown'
+    }
     
     
     //Protein name: " + ele.data('id') + "<br> Num Cluster Members: " + ele.data('num_cluster_members');
-    document.getElementById("info-text").innerHTML = info_text;
-    
+    document.getElementById("info-text").innerHTML = info_text
     //Color neighboring nodes red
     if (node_neighbors){
     node_neighbors.animate({
@@ -315,6 +378,22 @@ var graph_elems     //elems to have in graph layout
 var exclude_elems   //elems to not have in graph layout
 var firstRun = true //variable to re-run buildGraph() on the first initialization (cytoscape is wierd with it's layout engine)
 var selected_elems = null //elems to put in the selection-checkbox area
+var params = {      //parameters for the layout
+    name: 'cola',
+    pixelRatio: 1, //performance optimization
+    hideEdgesOnViewport: true, //performance
+    textureOnViewport: true, //performance optimization
+    maxSimulationTime: 2000,
+    //nodeSpacing: 1,// function( node ){ return 1;  },
+    randomize: false,
+    // edgeLength: function( edge ){
+    //     var len = parseInt(edge.data('weight')); 
+    //     return 1 / (1000*len) ; 
+    // },
+    handleDisconnected: true,
+    avoidOverlap: true,
+    infinite:false,
+};
 /**
  * Builds the cytoscape graph. 
  * Used on initialization with the global pid, plen, and pname phrases.
@@ -404,32 +483,50 @@ function buildGraph(){
         selected_elems = cy.collection()
     }
     
-    //set style on the match_protein
-    //TODO
+    // Set style on the match_protein. This is the protein we originally searched for
     var match_protein_cy = cy.$('#'+match_protein.id)
+    match_protein_cy = match_protein_cy.union('#'+match_protein.UniProtKB_accession)
     match_protein_cy.style({
         'shape':'star'
     })
+
+    // Set style on the analysis proteins. These are proteins that we selected for further analysis in a past step
+    var analysis_proteins_cy 
+    if (typeof analysis_proteins !== 'undefined'){
+        analysis_proteins.forEach(function (el, i, arr) {
+            if (analysis_proteins_cy === undefined){
+                 analysis_proteins_cy =  cy.$('#'+el.id)
+             }
+             analysis_proteins_cy = analysis_proteins_cy.union(cy.$('#'+el.id))
+             analysis_proteins_cy = analysis_proteins_cy.union(cy.$('#'+el.UniProtKB_accession))
+        })
+        analysis_proteins_cy = analysis_proteins_cy.difference(match_protein_cy)
+        analysis_proteins_cy.style({
+        'shape':'diamond'
+        })
+    }
 
     /**
      * Displays node info on click
      * Adds element to selected elements if shift key is held down
      */
     cy.$("node").on("click", function(e) {
-      if (shifted) {
-        var ele = e.target;
-        console.log(ele)
-        if (!selected_elems.contains(ele)){
-            //update the checkbox to include it        
-            var prot_name = ele.data("protein_name");
-            var uniprotkb = ele.data("UniProtKB_accession");
-            var uniparc = ele.data("UniParc_ID");
-            var num_cluster_members = ele.data("num_cluster_members");
-            $("#selection-area ul").append('<li><label for="' + uniparc + '"><input type="checkbox" name="' + uniparc + '" id="' + uniparc + '">' + prot_name + ": " + uniprotkb + ". Cluster members: "+num_cluster_members+"</label></li>");
+        
+        if (shifted) {
+            var ele = e.target;
+           
+            if (!selected_elems.contains(ele)){
+                console.log(ele)
+                //update the checkbox to include it        
+                var prot_name = ele.data("protein_name");
+                var uniprotkb = ele.data("UniProtKB_accession");
+                var id = ele.data("id");
+                var num_cluster_members = ele.data("num_cluster_members");
+                $("#selection-area ul").append('<li><label for="' + id + '"><input type="checkbox" name="' + id + '" id="' + id + '"> Prot name: ' + prot_name + ". UniProtKB: " + uniprotkb + ". Cluster members: "+num_cluster_members+"</label></li>");
+            }
+            //add element to selected elems
+            selected_elems = selected_elems.add(ele);
         }
-        //add element to selected elems
-        selected_elems = selected_elems.add(ele);
-      }
       displayNodeInfo(e);
     });
     
@@ -450,18 +547,12 @@ function buildGraph(){
         }   
         //Update info box
         document.getElementById("info-text").innerHTML = info_text;
-    });
-
-    //
-    
+    });    
 }
-//build graph initially
-buildGraph();
 
-var shifted = null
-$(document).on('keyup keydown', function(e){
-    shifted = e.shiftKey
-} );
+////////////////////////////////////////////////////////////////
+///// Functions to deal with node selection and export
+////////////////////////////////////////////////////////////////
 
 /**
  * Checks or unchecks all li -> label -> input checkboxes that are in selected_elems
@@ -470,9 +561,8 @@ $(document).on('keyup keydown', function(e){
 function selectCheckBox(checked){
     for (var i = 0; i < selected_elems.length; i++){
         var ele = selected_elems[i]
-        var uniparc = ele.data("UniParc_ID");
+        var uniparc = ele.data("id");
         document.getElementById(uniparc).checked = checked;
-
     }
 }
 
@@ -494,22 +584,22 @@ function clearSelected() {
       ele_li.remove();
 
       //get the uniparc identifier to get the correct element from selected_elems
-      var ele_uniparc = ele_li.find("label")[0].htmlFor;
+      var ele_id = ele_li.find("label")[0].htmlFor;
       //select the element from the cy graph
-      var ele = cy.elements('node[UniParc_ID = "' + ele_uniparc + '"]')[0];
+      var ele = cy.elements('node[id = "' + ele_id + '"]')[0];
       //remove this element from the selected_elems collection
       selected_elems = selected_elems.difference(ele);
     }
   });
 }
 /**
- * 
+ * Exports the nodes selected in FASTA format
  */
 function exportRepNodes(){
     //put all selected, and tick-box checked, elements into download_elems
     var download_elems = []
     for (var i = 0; i < selected_elems.length; i++){
-        if (document.getElementById(selected_elems[i].data("UniParc_ID")).checked == true){
+        if (document.getElementById(selected_elems[i].data("id")).checked == true){
             download_elems.push(selected_elems[i])
         }
     }
@@ -517,13 +607,18 @@ function exportRepNodes(){
     var strData = ''
     for (var i = 0; i < download_elems.length; i++){
         var ele = download_elems[i]
-        var ele_uniprotaccession = ele.data('UniProtKB_accession')
+        if (ele.data('UniProtKB_accession') !== undefined){
+            var ele_uniprotaccession = ele.data('UniProtKB_accession')
+        } else if (ele.data('UniRef90_ID') !== undefined){
+            var ele_uniprotaccession = ele.data('UniRef90_ID').split("_")[1]
+        } else{
+            var ele_uniprotaccession = ele.data('UniParc_ID').split("_")[1]
+        }
         var ele_uniref = ele.data('id')
-        console.log(ele_uniprotaccession)
-        console.log(sequence_by_uniprotkbaccession)
         strData += '>' + ele_uniprotaccession + '|' + ele_uniref + '\n'
         strData += sequence_by_uniprotkbaccession[ele_uniprotaccession] + '\n'
     }
+
     var strFileName = "filename.txt"
     strMimeType = "text/plain"
     var D = document,
@@ -565,23 +660,33 @@ function exportRepNodes(){
     return true;
 }
 
+//build graph initially
+buildGraph();
+
+////////////////////////////////////////////////////////////////
+///// Functions to build a lookup table for the id:sequence data array in fasta_js_map.js
+////////////////////////////////////////////////////////////////
 
 var html_sequence_by_uniprotkbaccession = {};
 var sequence_by_uniprotkbaccession = {};
 window.onload = function(e){ 
-    
     /**
      * generate a lookup table for the id:sequence data array
      */
     uniref_protein_map.forEach(function (el, i, arr) {
-        //clean sequence up
         html_seq = el.sequence.replace(/(\r\n|\n|\r)/gm,""); //remove line breaks
-        html_seq = html_seq.match(/.{1,30}/g).join("<br/>");      //add in line break every 30 chars
-        console.log(el.id)
-        //add it to the html formatted dict
-        html_sequence_by_uniprotkbaccession[el.id] = html_seq;
-        //add original to own dict
-        sequence_by_uniprotkbaccession[el.id] = el.sequence
+        if (html_seq.length !== 0){
+            //clean sequence up
+            
+            html_seq = html_seq.match(/.{1,30}/g).join("<br/>");      //add in line break every 30 chars
+            //add it to the html formatted dict
+
+            html_sequence_by_uniprotkbaccession[el.id] = html_seq;
+            //add original to own dict
+            sequence_by_uniprotkbaccession[el.id] = el.sequence
+        }
+        
+       
     });
 
 }

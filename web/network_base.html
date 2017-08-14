@@ -78,8 +78,8 @@
 <!-- Load appplication code at the end to ensure DOM is loaded -->
 <script src = "elements.js"></script>
 <script src = "match_protein.js"></script>
-<script src = "../../web/network.js"></script>
 <script src = "fasta_js_map.js"></script>
+<script src = "../../web/network.js"></script>
 <script>
         function showPidSettings(){
             document.getElementById("pid-settings").style.display = "block"
@@ -103,7 +103,9 @@
             document.getElementById("pnot-settings").innerHTML =  `Searches for terms to exlclude from the graph based on protein name: <br>
                                                                     Term1,Term2 --> Remove anything with Term1 or Term2 in the name  <br>
                                                                     Term1 Term2 --> Remove anything with Term1 or Term2 in the name  <br>
-                                                                    Term1&Term2 --> Remove anything with Term1 and Term2 in the name <br>` 
+                                                                    Term1&Term2 --> Remove anything with Term1 or Term2 in the name <br>
+                                                                    Note that we always exclude both terms from the name; i.e. there is no 'or' option
+                                                                    ` 
         }   
 
         function showPorgSettings(){

@@ -1,7 +1,9 @@
 """
-Julian Paris Morgan
+Converts a DIAMOND Blastp XML file to a FASTA file
+----------------------------------------------------------------
+Industrial Microbes C 2017 All Rights Reserved
+Contact: J Paris Morgan (jparismorgan@gmail.com) or Derek Greenfield (derek@imicrobes.com)
 """
-import re
 from Bio.Blast import NCBIXML
 
 
@@ -45,7 +47,7 @@ def blast_xml_to_fasta(input_xml_location, output_fasta_location):
         for hsp in alignment.hsps:
             #save if first hit
             if first:
-                match_protein_save_file.write('var match_protein = {id: "' + alignment.hit_id + '", UniProtKB_accession: "' + alignment.accession + '" }')
+                match_protein_save_file.write('var match_protein = {id: "' + alignment.hit_id + '", UniProtKB_accession: "' + alignment.accession + '" } \n')
                 first = False
 
             converted_fasta_save_file.write('>%s|%s\n' % (alignment.accession, alignment.hit_id))

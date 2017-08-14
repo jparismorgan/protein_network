@@ -1,17 +1,18 @@
 """
-Module docstring
+Four functions to be called in succession (or starting at allvall_parser is you have a list of fasta files)
+Run an all vs. all BLAST
+Each function returns a ret_dict dictionary with {'status': None, 'message':None, 'exception':None} as well as custom variables
+----------------------------------------------------------------
+Industrial Microbes C 2017 All Rights Reserved
+Contact: J Paris Morgan (jparismorgan@gmail.com) or Derek Greenfield (derek@imicrobes.com)
 """
 import subprocess
-import os, sys
-
+import os
 import datetime
-import shutil
-import glob
 
-import uniprot_dat_to_fasta
 import blast_xml_to_fasta
-import pairwise_parser
-import convertFastaToJs
+import allvall_parser
+import convert_fasta_to_js
 
 def prepareAnalysis(home_filepath, db_name, protein, protein_seq):
     """
@@ -145,17 +146,17 @@ def allVsAll(diamond_exec, save_folder_protein):
 
 def organizeNetwork(home_filepath, protein, save_folder, save_folder_protein):
     ret_dict = {'status': None, 'message':None, 'exception':None, 'save_folder_protein':None}
-    print 'XXXX \n'
+    print '\nXXXX'
     print home_filepath
     print protein
     print save_folder
     print save_folder_protein
-    print '\n XXXX \n'
-    # Can now call pairwise_parser.py to parse the all versus all result and create the network.js file of edges and nodes
+    print 'XXXX\n'
+    # Can now call allvall_parser.py to parse the all versus all result and create the network.js file of edges and nodes
     try:
         print "Parse the all vs all result and create the graph"
-        pairwise_parser.parseAllVsAllBlast(save_folder_protein+ '_allvall')
-        pairwise_parser.createElementsFile(save_folder)
+        allvall_parser.parseAllVsAllBlast(save_folder_protein+ '_allvall', save_folder)
+        #allvall_parser.createElementsFile(save_folder)
     except Exception as e:
         ret_dict['status'] = False
         ret_dict['message'] = "Error in parsing the all vs all result and create the graph"
@@ -165,8 +166,8 @@ def organizeNetwork(home_filepath, protein, save_folder, save_folder_protein):
     # Create javascript variable containing objects of nodes to protein sequences
     try:
         print "Create protein accession number to protein sequence objects for use in visualization."
-        convertFastaToJs.convertFastaToJs(save_folder_protein, save_folder)
-        pairwise_parser.createElementsFile(save_folder)
+        convert_fasta_to_js.convertFastaToJs(save_folder_protein, save_folder)
+        # allvall_parser.createElementsFile(save_folder)
     except Exception as e:
         ret_dict['status'] = False
         ret_dict['message'] = "Error in using protein accession number to create protein:sequence pair objects for use in visualization"

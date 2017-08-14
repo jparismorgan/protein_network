@@ -1,16 +1,20 @@
 """
-Module docstring
+Runs the Tkinter UI for the tool
+Has a main analysis option and a further analysis option
+----------------------------------------------------------------
+Industrial Microbes C 2017 All Rights Reserved
+Contact: J Paris Morgan (jparismorgan@gmail.com) or Derek Greenfield (derek@imicrobes.com)
 """
 from Tkinter import Tk, Label, Button, BOTTOM, Frame, Text, RIDGE, END
 import tkFileDialog
 import re
-import main
+import diamond_caller
 import time
 import webbrowser
 import os
 import subprocess
-
-
+import requests
+import xml.etree.ElementTree as ET
 
 WIDTH = 650
 HEIGHT = 800
@@ -182,7 +186,74 @@ class UserInterface:
         """
         self.analysis_file_path = tkFileDialog.askopenfilename()
         self.analysis_instructions_label.config(text =  'Analysis file: ' + self.analysis_file_path)
-#General purpose functions. Use pairwiseparser.py
+    def getClusterFastaFromProtein(self, save_folder_protein, protein_name):
+        """
+        Calls the UniRef database with the protein name.
+        If no response, it is no longer the cluster representative 
+                --> Call UniProt, scrape site, and get cluster rep
+        Parse the information about the rep member and each of the cluster members
+        Return a representative node with information and a list of cluster nodes
+        """
+        # API call to UniRef DB
+        base_url = "http://www.uniprot.org/uniref/"
+        extension = ".xml"
+        my_response = requests.get(base_url + protein_name + extension)
+        # For successful API call, response code will be 200 (OK)
+        if not my_response.ok:
+            print protein_name
+            # If response code is not ok (200), the cluster is not valid. We will search for the protein in the UniProt DB
+            # Assuming a structure of: UniRef90_proteinname_specificid
+            stripped_protein_name = protein_name.split('_')[1]
+            url = "http://www.uniprot.org/uniref/?query=uniprot:" + \
+                stripped_protein_name + "*&fil=identity:0.9&sort=score"
+            my_response = requests.get(url)
+            # For successful API call, response code will be 200 (OK)
+            if not my_response.ok:
+                print (my_response.status_code)
+                # If response code is not ok (200), print the resulting http error code with description. The protein sequence was not in UniProt
+                my_response.raise_for_status()
+
+            # We have found the protein in the UniProt DB. We will parse the html page to get the protein that is the cluster representative
+            temp = re.findall('id="UniRef90_.*?"', my_response.content)
+            if len(temp) == 0:
+                print "Error in Userinterface -> getClusterFastaFromProtein when calling the uniref DB on our cluster protein"
+            else:
+                protein_name = temp[0].replace('"', '').split('=')[-1]
+            my_response = requests.get(base_url + protein_name + extension)
+            if not my_response.ok:
+                print (my_response.status_code)
+                # If response code is not ok (200), print the resulting http error code with description. The protein sequence was not in UniProt
+                my_response.raise_for_status()
+
+        # get root of the XML response
+        root = ET.fromstring(my_response.content)
+
+        with open(save_folder_protein + '_plusclusters.fasta', 'a') as out_file:
+            
+            # Get the representative member
+            rep_member = root.find('{http://uniprot.org/uniref}entry').find(
+            '{http://uniprot.org/uniref}representativeMember').find('{http://uniprot.org/uniref}dbReference')
+            prot_fasta = requests.get("http://www.uniprot.org/uniprot/"+rep_member.attrib['id']+".fasta")
+
+            out_file.write(prot_fasta.text.encode('ascii', 'ignore'))           # Unicode to ascii. Ignore unicode characters that can't be converted
+
+            for i in root.iter(tag='{http://uniprot.org/uniref}member'):
+                member = i.find('{http://uniprot.org/uniref}dbReference')
+                #print "http://www.uniprot.org/uniprot/"+member.attrib['id']+".fasta"
+                prot_fasta = requests.get("http://www.uniprot.org/uniprot/"+member.attrib['id']+".fasta")
+                if re.search('Sorry', prot_fasta.text):
+                    # Not found in UniProt, so try UniParc
+                    #print "http://www.uniprot.org/uniparc/"+member.attrib['id']+".fasta"
+                    prot_fasta = requests.get("http://www.uniprot.org/uniparc/"+member.attrib['id']+".fasta")
+                    #print prot_fasta
+                if not re.search('Sorry', prot_fasta.text):
+                    # If found in UniProt or UniParc write to file
+                    out_file.write(prot_fasta.text.encode('ascii', 'ignore'))   # Unicode to ascii. Ignore unicode characters that can't be converted
+
+        return
+
+
+#General purpose functions. Use allvall_parser.py
     def guiPrepareAnalysis(self):
         """
         Begin analysis
@@ -190,7 +261,7 @@ class UserInterface:
         self.home_directory_path += '/'
 
         #Set up save directory, protein .fasta file, and diamond_exec file
-        analysis_dict = main.prepareAnalysis(self.home_directory_path, self.reference_db_name, self.query_protein_sequence_name, self.query_protein_sequence)
+        analysis_dict = diamond_caller.prepareAnalysis(self.home_directory_path, self.reference_db_name, self.query_protein_sequence_name, self.query_protein_sequence)
         if not analysis_dict['status']:
             self.writeToStatusLabel(ret_dict['message'] + "\n Ending program. Please try again")
             print analysis_dict['exception']
@@ -202,7 +273,7 @@ class UserInterface:
 
     def guiBlastAgainstReference(self):
         #blast protein against reference DB
-        protein_ref_dict = main.blastAgainstReference(self.home_directory_path, self.reference_db_name, self.query_protein_sequence_name, self.diamond_exec, self.save_folder)
+        protein_ref_dict = diamond_caller.blastAgainstReference(self.home_directory_path, self.reference_db_name, self.query_protein_sequence_name, self.diamond_exec, self.save_folder)
         if not protein_ref_dict['status']:
             self.writeToStatusLabel(protein_ref_dict['message'] + "\n Ending program. Please try again")
             print protein_ref_dict['exception']
@@ -211,26 +282,26 @@ class UserInterface:
         self.writeToStatusLabel(protein_ref_dict['message'] + "\n Will now make a database of the sequences from the blastp and then do an all versus all blastp. \n This can take 5-10 minutes; Don't close this window or the program will end early.")
 
         self.master.after(1000, self.guiAllVsAll)
-        #all_vs_all_dict = main.allVsAll(self.home_directory_path, self.reference_db_name, self.query_protein_sequence_name, diamond_exec, save_folder, save_folder_protein)
+        #all_vs_all_dict = diamond_caller.allVsAll(self.home_directory_path, self.reference_db_name, self.query_protein_sequence_name, diamond_exec, save_folder, save_folder_protein)
 
     def guiAllVsAll(self):
-        allvsall_ref_dict = main.allVsAll(self.diamond_exec, self.save_folder_protein)
+        allvsall_ref_dict = diamond_caller.allVsAll(self.diamond_exec, self.save_folder_protein)
         if not allvsall_ref_dict['status']:
             self.writeToStatusLabel(allvsall_ref_dict['message'] + "\n Ending program. Please try again")
             print allvsall_ref_dict['exception']
             return
-        self.writeToStatusLabel(allvsall_ref_dict['message'] + "\n Will now organize some files. This should be very quick.")
+        self.writeToStatusLabel(allvsall_ref_dict['message'] + "\n Will now organize some files.")
         self.master.after(1000, self.guiOrganizeNetwork)
 
     def guiOrganizeNetwork(self):
-        organize_network_ref_dict = main.organizeNetwork(self.home_directory_path, self.query_protein_sequence_name, self.save_folder, self.save_folder_protein)
+        organize_network_ref_dict = diamond_caller.organizeNetwork(self.home_directory_path, self.query_protein_sequence_name, self.save_folder, self.save_folder_protein)
         if not organize_network_ref_dict['status']:
             self.writeToStatusLabel(organize_network_ref_dict['message'] + "\n Ending program. Please try again")
             print organize_network_ref_dict['exception']
             return
         
         #User instructions
-        self.writeToStatusLabel(organize_network_ref_dict['message'] + "\n All done! Click the link below to oepn. Copy file into Chrome if not default.")
+        self.writeToStatusLabel(organize_network_ref_dict['message'] + "\n All done! Click the link below to open. Copy file into Chrome if not default.")
 
         # # Debug
         # self.save_folder = "/Users/parismorgan/Desktop/iMicrobes/network_builder/files/08Aug17_solmethanemonosubunitA_01/"
@@ -242,6 +313,8 @@ class UserInterface:
        
 #Start function for analyzing representative nodes
     def analyzeProteins(self, cluster):
+        self.writeToStatusLabel("Begininng analysis.")
+        
         # check we have the home directory file path
         if not self.analysis_home_directory_path:
             self.writeToStatusLabel("Error! Select the 'network_builder' directory. ")
@@ -285,7 +358,6 @@ class UserInterface:
         # Create the match protein file so don't throw errors in network.js
         try:
             match_protein_file = '/'.join(self.analysis_file_path.split('/')[:-1]) + '/match_protein.js'
-            print 'cp ' + match_protein_file + ' ' + self.save_folder + 'match_protein.js'
             subprocess.call('cp ' + match_protein_file + ' ' + self.save_folder + 'match_protein.js', shell = True)
         except Exception as e:
             self.writeToStatusLabel("Couldn't create empty match protein file.")
@@ -293,18 +365,33 @@ class UserInterface:
             return    
 
         # Check whether we need to download all the cluster node sequences from UniProt
+        uniref = False
         if cluster:
             self.writeToStatusLabel("Fetching the proteins associated with the cluster and reps")
-            with open(self.save_folder_protein + '.fasta', 'r') as rep_protein_file:
+            with open(self.save_folder_protein + '.fasta', 'r') as rep_protein_file, open(self.save_folder + 'match_protein.js', 'a') as match_protein_save_file:
+                match_protein_save_file.write('\n \n var analysis_proteins = [ \n')
                 for line in rep_protein_file:
                     if line.strip()[0] == ">":
-                        protein_name = line.strip().split("|")[1]      
-                        uniprotAPICall(save_folder_protein, protein_name)
+                        # Parse the analysis file for the name
+                        protein_name = line.strip().split("|")[1]
+                        alternate_name = line.strip().split("|")[0][1:]
+
+                        # Add the protein to the match_protein.js file in the analysis_proteins array
+                        match_protein_save_file.write('{id: "' + protein_name + '", UniProtKB_accession: "' + alternate_name + '" },\n' )
+
+                        if re.search('UniRef', line):
+                            # Get clusters from the uniref database
+                            self.getClusterFastaFromProtein(self.save_folder_protein, protein_name)
+                            uniref = True
+                if uniref:
+                    self.save_folder_protein = self.save_folder_protein + "_plusclusters"
+
+                match_protein_save_file.write('] \n')
             
-        
 
         #all vs all blast call
         self.guiAllVsAll() 
+        return
         
 
 #Start function for the main program
