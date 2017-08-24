@@ -39,16 +39,6 @@ To start the program, double click on the NetworkBuilder.command file in the Net
             * If this is the first analysis after the main program, select this option to retrieve all the sequences of the associated cluster proteins for the nodes you have selected. 
     4. Click "Begin Analysis' and view the HTML file, just as with the Main Analysis
 
-Insert image of the UI here.
-
-#### Main Analysis
-
-All vs all BLAST
-
-#### Further Analysis
-
-All vs all BLAST
-
 ## Motivation
 
 When deciding which novel proteins to clone and test, there is a lack of useful, rapid, extensible, and easy to use tools. The goal of this project was to build an analysis platform that would allow for easy examination of homologs of proteins of interest. 
