@@ -4,7 +4,13 @@
 
 This project is a tool for analyzing protein homologs to identiy proteins of interest for cloning. There are three main tools you can use.
 
-1. **NetworkBuilder (Main Analysis):** This is the main tool for visual analysis of protein networks. It takes as input the amino acid (AA) sequence of a query protein. It then searches against a UniRef90 database that has been pre-optimized for BLASTp searches using [DIAMOND](https://github.com/bbuchfink/diamond). It takes the top 300 hits from this search and runs an all versus all BLASTp search. Intuitively, this just means that every single protein is compared against every other protein using the BLASTp algorithm with default parameters from DIAMOND. The result of this is a  sequence similarity network (SSN) which we visualization in a HTML file (best viewed in Chrome). This undirected graph uses [Cytoscape.js](http://js.cytoscape.org/) for visualization with [Cola.js](https://github.com/cytoscape/cytoscape.js-cola) as the physics simulation layout. Nodes represent proteins and edges represent the bit-score from the all versus all BLASTp search. Visually, edge lengths are not proportional and instead represent general trends in similarity between two proteins based on the Cola.js laout. To provide better insight into protein associations, the [Markov Cluster Algorithm (MCL)](https://micans.org/mcl/) is used to color proteins in the network into families. We use this [cytoscape.js-markov-cluster](https://github.com/cytoscape/cytoscape.js-markov-cluster) implementation. The MCL can be thought of as similar to PageRank; MCL uses random walks to find densely connected regions of nodes and group them into families. In this graph, we give users the ability to filter based on:
+## Motivation
+
+When deciding which novel proteins to clone and test, there is a lack of useful, rapid, extensible, and easy to use tools. The goal of this project was to build an analysis platform that would allow for easy examination of homologs of proteins of interest. 
+
+## Tools
+
+1. **NetworkBuilder (Main Analysis):** This is the main tool for visual analysis of protein networks. It takes as input the amino acid (AA) sequence of a query protein. It then searches against a UniRef90 database that has been pre-optimized for BLASTp searches using [DIAMOND](https://github.com/bbuchfink/diamond). It takes the top 300 hits from this search. It then retrives the full protein sequences from UniProtKB (as opposed to just the local alignment which DIAMOND returns) runs an all versus all BLASTp search using DIAMOND. Intuitively, this just means that every single protein is compared against every other protein using the BLASTp algorithm with default parameters from DIAMOND. The result of this is a  sequence similarity network (SSN) which we visualization in a HTML file (best viewed in Chrome). This undirected graph uses [Cytoscape.js](http://js.cytoscape.org/) for visualization with [Cola.js](https://github.com/cytoscape/cytoscape.js-cola) as the physics simulation layout. Nodes represent proteins and edges represent the bit-score from the all versus all BLASTp search. Visually, edge lengths are not proportional and instead represent general trends in similarity between two proteins based on the Cola.js laout. To provide better insight into protein associations, the [Markov Cluster Algorithm (MCL)](https://micans.org/mcl/) is used to color proteins in the network into families. We use this [cytoscape.js-markov-cluster](https://github.com/cytoscape/cytoscape.js-markov-cluster) implementation. The MCL can be thought of as similar to PageRank; MCL uses random walks to find densely connected regions of nodes and group them into families. In this graph, we give users the ability to filter based on:
 	* Edge percent identity: filters out edges if the percent identity between two proteins is less than the set value
 	* Protein length minimum: filters out nodes (proteins) and their connected edges if the length of the protein (in AA's) is less than the set value
 	* Name search phrase: filters our nodes and their connected edges if the protein name doesn't contain the search phrase.
@@ -35,17 +41,22 @@ This project is a tool for analyzing protein homologs to identiy proteins of int
 	* NCBI protein: Currently not implemented so no annotation information is provided yet. This includes most proteins from the Automatic Protein Selection tool, though some are caught with the UniParc protein tool.
 
 	Each database provides slightly different information. Once this is complete, we follow the same process as the NetworkBuilder (Main Analysis), performing an all vs all BLASTp search and then visualizing the network.
-3. **Automatic Protein Selection:** This tool is separate from the NetworkBuilder tool and is intended to be used as an alternate first step instead of the NetworkBuilder (Main Analysis) tool. It uses a rough algorithm to calculate a selection of maximally distinct proteins from the input of the amino acid (AA) sequence of a query protein. 
+3. **Automatic Protein Selection:** This tool is separate from the NetworkBuilder tool and is intended to be used as an alternate first step instead of the NetworkBuilder (Main Analysis) tool. It uses a rough algorithm to calculate a selection of maximally distinct proteins from the input of the amino acid (AA) sequence of a query protein. First, we use [Biopython](http://biopython.org/DIST/docs/tutorial/Tutorial.html) to run a BLASTp search against through NCBI. The 'nr' database is suggested and supported, though there is an option for any of the NCBI databases may hypothetically work, albeit they have not be checked for bugs. If a BLASTp search has already been completed with the query protein, the XML results file can be selected instead. Once the BLASTp is completed, a percent identity distribution (relative to the query protein) is displayed to the user. The user can select the bin size for the distribution. The user then selects how many proteins of each bin to select. For each bin, we randomly choose (1.5 * # to select) proteins out of all the proteins. We then run a maximally distinct algorithm (also used in NetworkBuilder (Main Analysis)):
+	* For each node, calculate the sum of all outgoing edges. Only include edges for which both nodes are included in the graph.
+	* Within each connected component in the graph, select k nodes with the lowest sum. 
+		* k = 20% of total nodes in connected component.
+    
+4. **CreateClustaloCSVFile:** This program uses ClustalW to build a CSV file that will visually inform a user of how good their selection of proteins is. It will prompt a user for the NetworkBuilder directory and the FASTA file they are interested in. It will then run the [Clustal Omega](http://www.clustal.org/omega/README) program. It uses the --full flag to prevent using the mBed approximation and the --distmat-out to write the calculated distance matrix to a file, which we then parse into a CSV file. The scores are between 0.0 (identical) and 1.0 (completely different). See msa_csv_builder.py for more information in the docstring or visit Clustalo docs.
 
 ## Databases
 
-The UniRef90 database is built "by clustering UniRef100 sequences with 11 or more residues using the CD-HIT algorithm (Li W. and Godzik A., Bioinformatics, 22: 1658-1659, 2006) such that each cluster is composed of sequences that have at least 90% sequence identity to and 80% overlap with the longest sequence (a.k.a. seed sequence) of the cluster." The UniRef100 database "combines identical sequences and sub-fragments with 11 or more residues from any organism into a single UniRef entry, displaying the sequence of a representative protein, the accession numbers of all the merged entries and links to the corresponding UniProtKB and UniParc records"
+The UniRef90 database is built "by clustering UniRef100 sequences with 11 or more residues using the CD-HIT algorithm (Li W. and Godzik A., Bioinformatics, 22: 1658-1659, 2006) such that each cluster is composed of sequences that have at least 90% sequence identity to and 80% overlap with the longest sequence (a.k.a. seed sequence) of the cluster." The UniRef100 database "combines identical sequences and sub-fragments with 11 or more residues from any organism into a single UniRef entry, displaying the sequence of a representative protein, the accession numbers of all the merged entries and links to the corresponding UniProtKB and UniParc records".
 
 ## Code Example
 
 To start the program, double click on the NetworkBuilder.command file in the NetworkBuilder directory. There are then two stages of analysis you can run:
 
-* The Main Analysis
+* NetworkBuilder (Main Analysis)
     1. Enter the name of your protein sequence
         * Any spaces or following characters will be stripped: !, @, #, $, %, ^, &, *, (, ), >, <
     2. Enter the protein sequence. 
@@ -63,7 +74,7 @@ To start the program, double click on the NetworkBuilder.command file in the Net
     5. Viewing the HTML file 
         * To analyze the result, use the filters and protein data to select proteins of interest. After this first analysis, nodes will represent clusters with >90% sequence identity.  After selecting a subset of the proteins, select these nodes and the press 'Export Selected Nodes'. You will then have the option to name and save this file. A typical name for this file is protein name_analysis. You then can go back to the GUI that you used before. There, you can do secondary analysis on these nodes.
 
-* Secondary Analysis
+* NetworkBuilder (Secondary Analysis)
     1. Select the location of the NetworkBuilder directory 
         * Click on Google Drive, then click on NetworkBuilder, then click 'Choose'
     2. Select the file that you downloaded on the HTML page
@@ -74,13 +85,9 @@ To start the program, double click on the NetworkBuilder.command file in the Net
             * If this is the first analysis after the main program, select this option to retrieve all the sequences of the associated cluster proteins for the nodes you have selected. 
     4. Click "Begin Analysis' and view the HTML file, just as with the Main Analysis
 
-## Motivation
-
-When deciding which novel proteins to clone and test, there is a lack of useful, rapid, extensible, and easy to use tools. The goal of this project was to build an analysis platform that would allow for easy examination of homologs of proteins of interest. 
-
 ## Installation
 
-This project is built to be run locally on Mac OS X with Python 2.7 and an updated Chrome build.  
+This project is built to be run locally on Mac OS X with Python 2.7 and an updated Chrome.  
 
 To check your Python build, run:
 ```
@@ -93,7 +100,7 @@ If you have Python 3, you can:
 * Use a virtual environment: [Docs](http://docs.python-guide.org/en/latest/dev/virtualenvs/)
 * Downgrade to Python 2.7: [Stack Overflow](https://stackoverflow.com/questions/9246353/how-can-i-downgrade-from-python-3-2-to-2-7)
 
-We use several libraries in this program. If you have a standard built, you should already have the following built in dependencies:
+We use several libraries in this program. If you have a Mac, you should already have the following built in dependencies:
 
 * tkFileDialog
 * re
@@ -109,6 +116,7 @@ You will need to install the following libraries and packages:
     ```
     $ sudo easy_install pip
     ```
+    
 * Install requests 2.18.1
     ```
     $ sudo pip install requests
@@ -117,11 +125,38 @@ You will need to install the following libraries and packages:
     ```
     $ sudo easy_install -U requests
     ```
-
+    
 * Install BioPython 1.69
     ```
     $ sudo python2.7 -m pip install biopython
     ```
+* Install wget  
+    ```
+    $ sudo pip install wget
+    ```    
+
+You might need to change permissions as well because it seems like Google Drive resets file permissions when syncing. To do this:
+
+```
+$ cd ~/Google\ Drive/NetworkBuilder
+```
+or
+```
+$ cd ~/Google\ Drive/iMicrobes/NetworkBuilder
+```
+## Common Issues
+
+You may get an error about permissions on an executable file. To fix this, add execute permissions on the files:
+
+``` 
+$ Navigate to the NetworkBuilder directory (cd Google Drive/iMicrobes/NetworkBuilder)
+
+$ chmod 755 *.command
+$ cd diamond-0.9.9/bin
+$ chmod 755 diamond
+$ cd ../../src
+$ chmod 755 clustalo
+```
 
 ## Contributors
 
@@ -130,4 +165,3 @@ If you are interested in contributing, please feel free to reach out to Derek Gr
 ## License
 
 All rights reserved by Industrial Microbes. If you would like to use this software, please contact Derek Greenfield at derek at imicrobes dot com
-
